@@ -24,9 +24,17 @@ type Product = {
   variants?: Variant[] | null
 }
 
+async function getRegionId(): Promise<string> {
+  const { regions } = await medusa.store.region.list({ limit: 1 })
+  const region = (regions as Array<{ id: string }>)[0]
+  return region.id
+}
+
 async function getProduct(id: string): Promise<Product | null> {
   try {
+    const regionId = await getRegionId()
     const { product } = await medusa.store.product.retrieve(id, {
+      region_id: regionId,
       fields: "+variants.calculated_price,+variants.options,+options.values",
     })
     return product as Product
