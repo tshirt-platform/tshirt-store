@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { motion } from "motion/react"
@@ -15,7 +16,6 @@ export function HeroSection() {
   useGSAP(() => {
     const mm = gsap.matchMedia()
     mm.add("(min-width: 768px)", () => {
-      // Mosaic drifts up slowly for depth
       gsap.to(mosaicRef.current, {
         y: -40,
         ease: "none",
@@ -26,7 +26,6 @@ export function HeroSection() {
           scrub: 1,
         },
       })
-      // Hero fades on exit
       gsap.to(sectionRef.current, {
         opacity: 0,
         ease: "none",
@@ -47,7 +46,7 @@ export function HeroSection() {
       className="relative min-h-[90vh] overflow-hidden bg-white will-change-[opacity]"
     >
       <div className="mx-auto grid min-h-[90vh] max-w-7xl grid-cols-1 items-center gap-12 px-6 py-20 md:grid-cols-2 md:py-0">
-        {/* Left — text content */}
+        {/* Left — text */}
         <div>
           <motion.span
             className="mb-6 inline-block text-sm font-medium tracking-wider text-studio-terracotta uppercase"
@@ -112,7 +111,7 @@ export function HeroSection() {
           </motion.div>
         </div>
 
-        {/* Right — dark product mosaic */}
+        {/* Right — image mosaic with real photos */}
         <motion.div
           ref={mosaicRef}
           className="relative will-change-transform"
@@ -121,28 +120,52 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: 0.2 }}
         >
           <div className="grid grid-cols-3 grid-rows-2 gap-2 overflow-hidden rounded-2xl">
-            <div className="col-span-2 row-span-2 bg-studio-charcoal p-8">
-              <div className="flex h-full flex-col justify-between">
-                <div className="size-16 rounded-xl bg-studio-terracotta/20" />
-                <div>
-                  <p className="text-2xl font-bold text-white">
-                    Thiết kế tự do
-                  </p>
-                  <p className="mt-1 text-sm text-white/50">
-                    Kéo thả, sáng tạo, in ấn
-                  </p>
-                </div>
+            {/* Main — paint brushes workspace */}
+            <div className="relative col-span-2 row-span-2 aspect-square overflow-hidden">
+              <Image
+                src="/images/landing/hero-workspace.jpg"
+                alt="Paint brushes on canvas"
+                fill
+                className="object-cover"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute bottom-0 left-0 p-6">
+                <p className="text-2xl font-bold text-white">
+                  Thiết kế tự do
+                </p>
+                <p className="mt-1 text-sm text-white/70">
+                  Kéo thả, sáng tạo, in ấn
+                </p>
               </div>
             </div>
-            <div className="flex items-center justify-center bg-studio-terracotta p-4">
-              <p className="text-center text-sm font-bold text-white">
-                200+ mẫu
-              </p>
+            {/* Top-right — ink texture */}
+            <div className="relative overflow-hidden">
+              <Image
+                src="/images/landing/art-texture-1.jpg"
+                alt="Abstract ink art"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <p className="text-center text-sm font-bold text-white">
+                  200+ mẫu
+                </p>
+              </div>
             </div>
-            <div className="flex items-center justify-center bg-studio-ochre/80 p-4">
-              <p className="text-center text-sm font-bold text-white">
-                5000+ tác phẩm
-              </p>
+            {/* Bottom-right — colorful texture */}
+            <div className="relative overflow-hidden">
+              <Image
+                src="/images/landing/art-texture-4.jpg"
+                alt="Abstract paint art"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <p className="text-center text-sm font-bold text-white">
+                  5000+ tác phẩm
+                </p>
+              </div>
             </div>
           </div>
         </motion.div>

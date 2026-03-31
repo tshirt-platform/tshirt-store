@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef } from "react"
+import Image from "next/image"
 import { motion } from "motion/react"
 import { useGSAP } from "@gsap/react"
 import { gsap } from "@/lib/gsap"
@@ -48,8 +49,18 @@ export function ArtistTestimonials() {
   }, { scope: sectionRef })
 
   return (
-    <section ref={sectionRef} className="bg-studio-charcoal py-28">
-      <div className="mx-auto max-w-7xl px-6">
+    <section ref={sectionRef} className="relative overflow-hidden py-28">
+      {/* Background image with dark overlay */}
+      <Image
+        src="/images/landing/dark-texture.jpg"
+        alt=""
+        fill
+        className="object-cover"
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 bg-studio-charcoal/85" />
+
+      <div className="relative mx-auto max-w-7xl px-6">
         {/* Split header — bold heading left, featured quote right */}
         <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-2">
           <motion.h2

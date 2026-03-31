@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { useGSAP } from "@gsap/react"
 import { gsap } from "@/lib/gsap"
@@ -120,26 +121,36 @@ export function BentoShowcase() {
           </motion.p>
         </div>
 
-        {/* Dark showcase grid — full width */}
+        {/* Showcase grid with real art textures */}
         <div
           ref={imageRef}
           className="mt-16 grid grid-cols-2 gap-2 overflow-hidden rounded-2xl will-change-transform md:grid-cols-4"
         >
           {[
-            { label: "Minimalist Logo", color: "bg-amber-50" },
-            { label: "Vintage Typography", color: "bg-rose-50" },
-            { label: "Abstract Art", color: "bg-violet-50" },
-            { label: "Nature Theme", color: "bg-emerald-50" },
+            { label: "Ink Art", src: "/images/landing/art-texture-1.jpg" },
+            { label: "Oil Colors", src: "/images/landing/art-texture-2.jpg" },
+            { label: "Liquid Paint", src: "/images/landing/art-texture-3.jpg" },
+            { label: "Marble Art", src: "/images/landing/art-texture-4.jpg" },
           ].map((tpl, i) => (
             <motion.div
               key={tpl.label}
-              className={`${tpl.color} flex aspect-square items-center justify-center`}
+              className="group relative aspect-square overflow-hidden"
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.08 }}
             >
-              <div className="size-16 rounded-xl bg-white/60 shadow-sm" />
+              <Image
+                src={tpl.src}
+                alt={tpl.label}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/50 to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <span className="text-sm font-medium text-white">
+                  {tpl.label}
+                </span>
+              </div>
             </motion.div>
           ))}
         </div>
