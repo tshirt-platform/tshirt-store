@@ -43,8 +43,7 @@ export default function DesignCanvas() {
         preserveObjectStacking: true,
       })
 
-      // Load mockup and print area overlay
-      await loadMockup(fabricCanvas)
+      // Draw print area overlay (mockup will be added later with real images)
       await drawPrintAreaOverlay(fabricCanvas)
 
       // Save initial snapshot
@@ -77,10 +76,12 @@ export default function DesignCanvas() {
   return (
     <div
       ref={containerRef}
-      className="flex items-center justify-center bg-gray-100"
+      className="flex flex-1 items-center justify-center bg-gray-200"
       data-tool={activeTool}
     >
-      <canvas ref={canvasRef} />
+      <div className="[&_.canvas-container]:shadow-lg">
+        <canvas ref={canvasRef} />
+      </div>
     </div>
   )
 }

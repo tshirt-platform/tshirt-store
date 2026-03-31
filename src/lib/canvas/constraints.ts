@@ -31,20 +31,26 @@ export function validateAllObjects(canvas: Canvas): {
 export async function drawPrintAreaOverlay(canvas: Canvas) {
   const fabric = await import("fabric")
 
-  const overlay = new fabric.Rect({
-    left: PRINT_AREA.x,
-    top: PRINT_AREA.y,
-    width: PRINT_AREA.width,
-    height: PRINT_AREA.height,
-    fill: "transparent",
+  const lineProps = {
     stroke: "#00aaff",
-    strokeWidth: 1.5,
-    strokeDashArray: [6, 4],
+    strokeWidth: 1,
+    strokeDashArray: [6, 4] as number[],
     selectable: false,
     evented: false,
     excludeFromExport: true,
-  })
+    objectCaching: false,
+  }
 
-  canvas.add(overlay)
-  canvas.sendObjectToBack(overlay)
+  const { x, y, width, height } = PRINT_AREA
+  const lines = [
+    new fabric.Line([x, y, x + width, y], lineProps),                   // top
+    new fabric.Line([x + width, y, x + width, y + height], lineProps),   // right
+    new fabric.Line([x, y + height, x + width, y + height], lineProps),  // bottom
+    new fabric.Line([x, y, x, y + height], lineProps),                   // left
+  ]
+
+  lines.forEach((line) => {
+    canvas.add(line)
+    canvas.sendObjectToBack(line)
+  })
 }

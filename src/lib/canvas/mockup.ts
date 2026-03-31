@@ -3,7 +3,7 @@ import type { Canvas, FabricObject } from "fabric"
 
 // Color placeholder mockups (will be replaced with real images later)
 const MOCKUP_COLORS: Record<string, string> = {
-  white: "#f5f5f5",
+  white: "#ffffff",
   black: "#1a1a1a",
   red: "#dc2626",
   blue: "#2563eb",
@@ -20,14 +20,14 @@ export async function loadMockup(
   const fabric = await import("fabric")
   const fill = MOCKUP_COLORS[color] ?? MOCKUP_COLORS[DEFAULT_COLOR]
 
-  // Placeholder: colored rectangle representing the T-shirt area
+  // Placeholder: centered T-shirt shape
   const mockupRect = new fabric.Rect({
     left: 50,
-    top: 30,
+    top: 20,
     width: 500,
-    height: 540,
-    rx: 16,
-    ry: 16,
+    height: 560,
+    rx: 12,
+    ry: 12,
     fill,
     selectable: false,
     evented: false,
