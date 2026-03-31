@@ -1,11 +1,12 @@
 import { create } from "zustand"
 import type { ActiveTool, DesignSide } from "@tshirt/shared"
+import type { Canvas } from "fabric"
 
 const MAX_HISTORY = 30
 
 interface DesignStoreState {
   // Canvas reference (set after fabric init)
-  canvas: fabric.Canvas | null
+  canvas: Canvas | null
   // Product context
   productId: string | null
   variantId: string | null
@@ -22,7 +23,7 @@ interface DesignStoreState {
   pngUrl: string | null
   jsonUrl: string | null
   // Actions
-  setCanvas: (canvas: fabric.Canvas | null) => void
+  setCanvas: (canvas: Canvas | null) => void
   setProductId: (id: string) => void
   setVariantId: (id: string | null) => void
   setActiveTool: (tool: ActiveTool) => void

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import type { IText, FabricObject } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
 
 export function useDesignShortcuts() {
@@ -36,7 +37,7 @@ export function useDesignShortcuts() {
       // Delete selected
       if (e.key === "Delete" || e.key === "Backspace") {
         const active = canvas.getActiveObject()
-        if (active && !(active as fabric.IText).isEditing) {
+        if (active && !(active as IText).isEditing) {
           canvas.remove(active)
           canvas.renderAll()
           saveSnapshot()
@@ -65,7 +66,7 @@ export function useDesignShortcuts() {
         e.preventDefault()
         const active = canvas.getActiveObject()
         if (active) {
-          active.clone().then((cloned: fabric.FabricObject) => {
+          active.clone().then((cloned: FabricObject) => {
             cloned.set({ left: (cloned.left ?? 0) + 20, top: (cloned.top ?? 0) + 20 })
             canvas.add(cloned)
             canvas.setActiveObject(cloned)

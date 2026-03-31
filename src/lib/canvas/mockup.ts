@@ -1,4 +1,5 @@
 import type { DesignSide } from "@tshirt/shared"
+import type { Canvas, FabricObject } from "fabric"
 
 // Color placeholder mockups (will be replaced with real images later)
 const MOCKUP_COLORS: Record<string, string> = {
@@ -12,7 +13,7 @@ const MOCKUP_COLORS: Record<string, string> = {
 const DEFAULT_COLOR = "white"
 
 export async function loadMockup(
-  canvas: fabric.Canvas,
+  canvas: Canvas,
   color: string = DEFAULT_COLOR,
   _side: DesignSide = "front"
 ) {
@@ -38,12 +39,12 @@ export async function loadMockup(
     .getObjects()
     .find(
       (obj) =>
-        (obj as fabric.FabricObject & { _isMockup?: boolean })._isMockup
+        (obj as FabricObject & { _isMockup?: boolean })._isMockup
     )
   if (existing) canvas.remove(existing)
 
   // Tag as mockup for later removal
-  ;(mockupRect as fabric.FabricObject & { _isMockup?: boolean })._isMockup =
+  ;(mockupRect as FabricObject & { _isMockup?: boolean })._isMockup =
     true
 
   canvas.add(mockupRect)

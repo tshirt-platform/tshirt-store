@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useCallback } from "react"
+import type { Canvas } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
 import { drawPrintAreaOverlay } from "@/lib/canvas/constraints"
 import { loadMockup } from "@/lib/canvas/mockup"
@@ -26,7 +27,7 @@ export default function DesignCanvas() {
   )
 
   useEffect(() => {
-    let fabricCanvas: fabric.Canvas | null = null
+    let fabricCanvas: Canvas | null = null
 
     async function init() {
       const fabric = await import("fabric")

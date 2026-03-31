@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import type { FabricObject } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
 import {
   TEMPLATES,
@@ -33,8 +34,8 @@ export default function TemplateGallery() {
       .getObjects()
       .some(
         (o) =>
-          !(o as fabric.FabricObject & { excludeFromExport?: boolean }).excludeFromExport &&
-          !(o as fabric.FabricObject & { _isMockup?: boolean })._isMockup
+          !(o as FabricObject & { excludeFromExport?: boolean }).excludeFromExport &&
+          !(o as FabricObject & { _isMockup?: boolean })._isMockup
       )
 
     if (hasObjects) {
@@ -47,8 +48,8 @@ export default function TemplateGallery() {
     // Remove user objects, keep mockup + overlay
     const toRemove = canvas.getObjects().filter(
       (o) =>
-        !(o as fabric.FabricObject & { excludeFromExport?: boolean }).excludeFromExport &&
-        !(o as fabric.FabricObject & { _isMockup?: boolean })._isMockup
+        !(o as FabricObject & { excludeFromExport?: boolean }).excludeFromExport &&
+        !(o as FabricObject & { _isMockup?: boolean })._isMockup
     )
     toRemove.forEach((o) => canvas.remove(o))
 
@@ -58,7 +59,7 @@ export default function TemplateGallery() {
       const fabric = await import("fabric")
       for (const objData of data.objects) {
         const enlivened = await fabric.util.enlivenObjects([objData])
-        enlivened.forEach((obj) => canvas.add(obj as fabric.FabricObject))
+        enlivened.forEach((obj) => canvas.add(obj as FabricObject))
       }
     }
 

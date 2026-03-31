@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import type { FabricObject } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
 import { Button } from "@/components/ui/button"
 import { Eye, EyeOff, Lock, Unlock, Trash2 } from "lucide-react"
@@ -24,14 +25,14 @@ export default function LayerPanel() {
     if (!canvas) return
     const objects = canvas.getObjects().filter(
       (obj) =>
-        !(obj as fabric.FabricObject & { excludeFromExport?: boolean }).excludeFromExport &&
-        !(obj as fabric.FabricObject & { _isMockup?: boolean })._isMockup
+        !(obj as FabricObject & { excludeFromExport?: boolean }).excludeFromExport &&
+        !(obj as FabricObject & { _isMockup?: boolean })._isMockup
     )
 
     const items: LayerItem[] = objects
       .map((obj, i) => ({
         id: i,
-        name: (obj as fabric.FabricObject & { text?: string }).text?.slice(0, 20) ?? `Layer ${i + 1}`,
+        name: (obj as FabricObject & { text?: string }).text?.slice(0, 20) ?? `Layer ${i + 1}`,
         type: obj.type ?? "object",
         visible: obj.visible !== false,
         locked: !obj.selectable,
@@ -72,8 +73,8 @@ export default function LayerPanel() {
     if (!canvas) return null
     const objects = canvas.getObjects().filter(
       (obj) =>
-        !(obj as fabric.FabricObject & { excludeFromExport?: boolean }).excludeFromExport &&
-        !(obj as fabric.FabricObject & { _isMockup?: boolean })._isMockup
+        !(obj as FabricObject & { excludeFromExport?: boolean }).excludeFromExport &&
+        !(obj as FabricObject & { _isMockup?: boolean })._isMockup
     )
     // Reverse index since layers are displayed in reverse
     return objects[layers.length - 1 - layers.indexOf(layerItem)] ?? null

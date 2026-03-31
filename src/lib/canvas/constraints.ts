@@ -1,3 +1,5 @@
+import type { Canvas, FabricObject } from "fabric"
+
 export const PRINT_AREA = {
   x: 100,
   y: 80,
@@ -5,7 +7,7 @@ export const PRINT_AREA = {
   height: 440,
 } as const
 
-export function isWithinPrintArea(obj: fabric.FabricObject): boolean {
+export function isWithinPrintArea(obj: FabricObject): boolean {
   const bounds = obj.getBoundingRect()
   return (
     bounds.left >= PRINT_AREA.x &&
@@ -15,18 +17,18 @@ export function isWithinPrintArea(obj: fabric.FabricObject): boolean {
   )
 }
 
-export function validateAllObjects(canvas: fabric.Canvas): {
+export function validateAllObjects(canvas: Canvas): {
   valid: boolean
-  outOfBounds: fabric.FabricObject[]
+  outOfBounds: FabricObject[]
 } {
   const objects = canvas
     .getObjects()
-    .filter((obj) => !(obj as fabric.FabricObject & { excludeFromExport?: boolean }).excludeFromExport)
+    .filter((obj) => !(obj as FabricObject & { excludeFromExport?: boolean }).excludeFromExport)
   const outOfBounds = objects.filter((obj) => !isWithinPrintArea(obj))
   return { valid: outOfBounds.length === 0, outOfBounds }
 }
 
-export async function drawPrintAreaOverlay(canvas: fabric.Canvas) {
+export async function drawPrintAreaOverlay(canvas: Canvas) {
   const fabric = await import("fabric")
 
   const overlay = new fabric.Rect({

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useCallback } from "react"
+import type { TPointerEventInfo } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
 import { PRINT_AREA } from "@/lib/canvas/constraints"
 
@@ -15,7 +16,7 @@ export default function TextEditor() {
   const setActiveTool = useDesignStore((s) => s.setActiveTool)
 
   const handleCanvasClick = useCallback(
-    async (opt: fabric.TPointerEventInfo) => {
+    async (opt: TPointerEventInfo) => {
       if (activeTool !== "text" || !canvas) return
 
       const fabric = await import("fabric")

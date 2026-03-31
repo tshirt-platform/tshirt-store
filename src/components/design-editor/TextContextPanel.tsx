@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import type { IText } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
 import { Button } from "@/components/ui/button"
 import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight } from "lucide-react"
@@ -22,7 +23,7 @@ const FONTS = [
 export default function TextContextPanel() {
   const canvas = useDesignStore((s) => s.canvas)
   const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
-  const [selected, setSelected] = useState<fabric.IText | null>(null)
+  const [selected, setSelected] = useState<IText | null>(null)
   const [fontFamily, setFontFamily] = useState("Inter")
   const [fontSize, setFontSize] = useState(32)
   const [fill, setFill] = useState("#1a1a1a")
@@ -31,7 +32,7 @@ export default function TextContextPanel() {
   const [isUnderline, setIsUnderline] = useState(false)
   const [textAlign, setTextAlign] = useState("left")
 
-  const syncFromObject = useCallback((obj: fabric.IText) => {
+  const syncFromObject = useCallback((obj: IText) => {
     setFontFamily(obj.fontFamily ?? "Inter")
     setFontSize(obj.fontSize ?? 32)
     setFill((obj.fill as string) ?? "#1a1a1a")
@@ -47,7 +48,7 @@ export default function TextContextPanel() {
     const onSelect = () => {
       const active = canvas.getActiveObject()
       if (active && "text" in active) {
-        const textObj = active as fabric.IText
+        const textObj = active as IText
         setSelected(textObj)
         syncFromObject(textObj)
       } else {
