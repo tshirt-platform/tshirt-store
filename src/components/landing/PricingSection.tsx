@@ -1,7 +1,10 @@
 "use client"
 
+import { useRef } from "react"
 import Link from "next/link"
 import { motion } from "motion/react"
+import { useGSAP } from "@gsap/react"
+import { gsap } from "@/lib/gsap"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Check } from "lucide-react"
@@ -52,9 +55,35 @@ const PRICING = [
   },
 ]
 
+// Wave offsets: left card up, center stays, right card down
+const WAVE_OFFSETS = [-15, 0, 15]
+
 export function PricingSection() {
+  const sectionRef = useRef<HTMLElement>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  useGSAP(() => {
+    const mm = gsap.matchMedia()
+    mm.add("(min-width: 768px)", () => {
+      cardRefs.current.forEach((card, i) => {
+        if (!card) return
+        gsap.to(card, {
+          y: WAVE_OFFSETS[i],
+          ease: "none",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1,
+          },
+        })
+      })
+    })
+    return () => mm.revert()
+  }, { scope: sectionRef })
+
   return (
-    <section className="bg-studio-cream py-20">
+    <section ref={sectionRef} className="bg-studio-cream py-20">
       <div className="mx-auto max-w-7xl px-4">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-studio-charcoal">
@@ -69,8 +98,9 @@ export function PricingSection() {
           {PRICING.map((plan, index) => (
             <motion.div
               key={plan.name}
+              ref={(el) => { cardRefs.current[index] = el }}
               className={cn(
-                "relative flex flex-col rounded-2xl border bg-white p-6",
+                "relative flex flex-col rounded-2xl border bg-white p-6 will-change-transform",
                 plan.popular
                   ? "border-studio-terracotta shadow-lg"
                   : "border-studio-charcoal/10"

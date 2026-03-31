@@ -1,44 +1,92 @@
 "use client"
 
+import { useRef } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { motion } from "motion/react"
+import { useGSAP } from "@gsap/react"
+import { gsap } from "@/lib/gsap"
 import { ArrowRight } from "lucide-react"
 
-function BrushStroke() {
-  return (
-    <svg
-      viewBox="0 0 400 40"
-      fill="none"
-      className="pointer-events-none absolute top-1/2 left-1/2 h-10 w-80 -translate-x-1/2 -translate-y-1/2 text-studio-terracotta/10 md:w-[500px]"
-      aria-hidden="true"
-    >
-      <path
-        d="M10 20 C80 5, 150 35, 200 18 C250 2, 320 30, 390 15"
-        stroke="currentColor"
-        strokeWidth="12"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
-function PaintDots() {
-  return (
-    <div className="pointer-events-none absolute top-12 right-8 md:right-20" aria-hidden="true">
-      <div className="size-4 rounded-full bg-studio-terracotta/15" />
-      <div className="mt-2 ml-6 size-3 rounded-full bg-studio-ochre/20" />
-      <div className="mt-1 -ml-2 size-2 rounded-full bg-studio-sage/15" />
-    </div>
-  )
-}
-
 export function HeroSection() {
+  const sectionRef = useRef<HTMLElement>(null)
+  const brushRef = useRef<SVGSVGElement>(null)
+  const dotsRef = useRef<HTMLDivElement>(null)
+  const glowRef = useRef<HTMLDivElement>(null)
+
+  useGSAP(() => {
+    const mm = gsap.matchMedia()
+    mm.add("(min-width: 768px)", () => {
+      // Brush stroke moves up slowly — background layer
+      gsap.to(brushRef.current, {
+        y: -40,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: 1,
+        },
+      })
+      // Paint dots drift down + rotate — foreground layer
+      gsap.to(dotsRef.current, {
+        y: 30,
+        rotate: 15,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: 1,
+        },
+      })
+      // Radial glow expands subtly
+      gsap.to(glowRef.current, {
+        scale: 1.15,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: 1,
+        },
+      })
+      // Section fades out as user scrolls past
+      gsap.to(sectionRef.current, {
+        opacity: 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "60% top",
+          end: "bottom top",
+          scrub: 1,
+        },
+      })
+    })
+    return () => mm.revert()
+  }, { scope: sectionRef })
+
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-studio-cream via-white to-studio-wash">
-      {/* Subtle radial glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(180,100,60,0.04),transparent_60%)]" />
-      <PaintDots />
+    <section
+      ref={sectionRef}
+      className="relative overflow-hidden bg-gradient-to-br from-studio-cream via-white to-studio-wash will-change-[opacity]"
+    >
+      {/* Radial glow */}
+      <div
+        ref={glowRef}
+        className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(180,100,60,0.04),transparent_60%)] will-change-transform"
+      />
+
+      {/* Paint dots — foreground parallax */}
+      <div
+        ref={dotsRef}
+        className="pointer-events-none absolute top-12 right-8 will-change-transform md:right-20"
+        aria-hidden="true"
+      >
+        <div className="size-4 rounded-full bg-studio-terracotta/15" />
+        <div className="mt-2 ml-6 size-3 rounded-full bg-studio-ochre/20" />
+        <div className="mt-1 -ml-2 size-2 rounded-full bg-studio-sage/15" />
+      </div>
 
       <div className="relative mx-auto flex max-w-7xl flex-col items-center px-4 py-24 text-center md:py-36">
         <motion.div
@@ -59,7 +107,21 @@ export function HeroSection() {
         >
           Biến ý tưởng thành
           <span className="relative inline-block">
-            <BrushStroke />
+            {/* Brush stroke — background parallax */}
+            <svg
+              ref={brushRef}
+              viewBox="0 0 400 40"
+              fill="none"
+              className="pointer-events-none absolute top-1/2 left-1/2 h-10 w-80 -translate-x-1/2 -translate-y-1/2 text-studio-terracotta/10 will-change-transform md:w-[500px]"
+              aria-hidden="true"
+            >
+              <path
+                d="M10 20 C80 5, 150 35, 200 18 C250 2, 320 30, 390 15"
+                stroke="currentColor"
+                strokeWidth="12"
+                strokeLinecap="round"
+              />
+            </svg>
             <span className="relative bg-gradient-to-r from-studio-terracotta to-studio-ochre bg-clip-text text-transparent">
               {" "}kiệt tác{" "}
             </span>
