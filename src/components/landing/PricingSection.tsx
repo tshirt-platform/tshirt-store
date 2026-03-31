@@ -11,21 +11,21 @@ const PRICING = [
   {
     name: "Áo thun",
     price: "199.000đ",
-    description: "Áo thun cotton 100%, in DTG chất lượng cao",
+    description: "Canvas cotton 100%, in DTG chất lượng cao",
     popular: true,
     features: [
       "Cotton 100% thoáng mát",
       "In DTG sắc nét",
       "10+ màu sắc",
       "Size S - 3XL",
-      "Thiết kế 2 mặt",
+      "Sáng tạo 2 mặt",
     ],
     href: "/products?type=tshirt",
   },
   {
     name: "Áo polo",
     price: "299.000đ",
-    description: "Áo polo cao cấp, phù hợp đồng phục công ty",
+    description: "Canvas polo cao cấp, phù hợp đồng phục sáng tạo",
     popular: false,
     features: [
       "Vải polo cao cấp",
@@ -39,7 +39,7 @@ const PRICING = [
   {
     name: "Hoodie",
     price: "399.000đ",
-    description: "Hoodie nỉ bông ấm áp, in chất lượng cao",
+    description: "Canvas nỉ bông ấm áp, in chất lượng cao",
     popular: false,
     features: [
       "Nỉ bông dày dặn",
@@ -54,11 +54,13 @@ const PRICING = [
 
 export function PricingSection() {
   return (
-    <section className="py-20">
+    <section className="bg-studio-cream py-20">
       <div className="mx-auto max-w-7xl px-4">
         <div className="text-center">
-          <h2 className="text-3xl font-bold">Bảng giá</h2>
-          <p className="text-muted-foreground mt-3">
+          <h2 className="text-3xl font-bold text-studio-charcoal">
+            Chọn canvas cho tác phẩm của bạn
+          </h2>
+          <p className="mt-3 text-studio-charcoal/60">
             Giá đã bao gồm in thiết kế, chưa bao gồm phí vận chuyển
           </p>
         </div>
@@ -68,8 +70,10 @@ export function PricingSection() {
             <motion.div
               key={plan.name}
               className={cn(
-                "relative flex flex-col rounded-xl border p-6",
-                plan.popular && "border-gray-900 shadow-lg"
+                "relative flex flex-col rounded-2xl border bg-white p-6",
+                plan.popular
+                  ? "border-studio-terracotta shadow-lg"
+                  : "border-studio-charcoal/10"
               )}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -77,21 +81,28 @@ export function PricingSection() {
               transition={{ duration: 0.4, delay: index * 0.1 }}
             >
               {plan.popular && (
-                <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                  Phổ biến
+                <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-studio-terracotta text-white hover:bg-studio-terracotta/90">
+                  Yêu thích nhất
                 </Badge>
               )}
-              <h3 className="text-lg font-semibold">{plan.name}</h3>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <h3 className="text-lg font-semibold text-studio-charcoal">
+                {plan.name}
+              </h3>
+              <p className="mt-1 text-sm text-studio-charcoal/60">
                 {plan.description}
               </p>
               <div className="mt-4">
-                <span className="text-3xl font-bold">{plan.price}</span>
+                <span className="text-3xl font-bold text-studio-charcoal">
+                  {plan.price}
+                </span>
               </div>
               <ul className="mt-6 flex-1 space-y-3">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2 text-sm">
-                    <Check className="size-4 text-emerald-500" />
+                  <li
+                    key={feature}
+                    className="flex items-center gap-2 text-sm text-studio-charcoal/80"
+                  >
+                    <Check className="size-4 text-studio-sage" />
                     {feature}
                   </li>
                 ))}
@@ -99,10 +110,14 @@ export function PricingSection() {
               <Button
                 asChild
                 variant={plan.popular ? "default" : "outline"}
-                className="mt-6"
+                className={cn(
+                  "mt-6",
+                  plan.popular &&
+                    "bg-studio-terracotta text-white hover:bg-studio-terracotta/90"
+                )}
                 size="lg"
               >
-                <Link href={plan.href}>Bắt đầu thiết kế</Link>
+                <Link href={plan.href}>Bắt đầu sáng tạo</Link>
               </Button>
             </motion.div>
           ))}

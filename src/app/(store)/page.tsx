@@ -1,19 +1,18 @@
 import type { Metadata } from "next"
 import { HeroSection } from "@/components/landing/HeroSection"
-import { HowItWorks } from "@/components/landing/HowItWorks"
-import { TemplateGallery } from "@/components/landing/TemplateGallery"
-import { SocialProof } from "@/components/landing/SocialProof"
+import { BentoShowcase } from "@/components/landing/BentoShowcase"
+import { ArtistTestimonials } from "@/components/landing/ArtistTestimonials"
 import { PricingSection } from "@/components/landing/PricingSection"
 import { FAQSection } from "@/components/landing/FAQSection"
 
 export const metadata: Metadata = {
-  title: "TShirt Custom — Thiết kế áo thun theo ý bạn",
+  title: "TShirt Studio — Biến ý tưởng thành kiệt tác",
   description:
-    "Tự thiết kế áo thun, polo, hoodie với editor trực tuyến. In chất lượng cao, giao hàng toàn quốc.",
+    "Studio thiết kế áo thun trực tuyến. Biến ý tưởng thành tác phẩm nghệ thuật trên áo thun, polo, hoodie.",
   openGraph: {
-    title: "TShirt Custom — Thiết kế áo thun theo ý bạn",
+    title: "TShirt Studio — Biến ý tưởng thành kiệt tác",
     description:
-      "Tự thiết kế áo thun, polo, hoodie với editor trực tuyến. In chất lượng cao, giao hàng toàn quốc.",
+      "Studio thiết kế áo thun trực tuyến. Biến ý tưởng thành tác phẩm nghệ thuật trên áo thun, polo, hoodie.",
     type: "website",
   },
 }
@@ -22,9 +21,8 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <HowItWorks />
-      <TemplateGallery />
-      <SocialProof />
+      <BentoShowcase />
+      <ArtistTestimonials />
       <PricingSection />
       <FAQSection />
     </>

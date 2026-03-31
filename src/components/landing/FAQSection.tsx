@@ -8,7 +8,7 @@ const FAQ_ITEMS = [
   {
     question: "Thời gian giao hàng bao lâu?",
     answer:
-      "Đơn hàng tiêu chuẩn sẽ được giao trong 3-5 ngày làm việc. Đối với đơn hàng số lượng lớn (trên 50 chiếc), thời gian có thể là 7-10 ngày.",
+      "Tác phẩm tiêu chuẩn sẽ được giao trong 3-5 ngày làm việc. Đối với đơn hàng số lượng lớn (trên 50 chiếc), thời gian có thể là 7-10 ngày.",
   },
   {
     question: "Chất lượng in như thế nào?",
@@ -23,7 +23,7 @@ const FAQ_ITEMS = [
   {
     question: "Tôi có thể chỉnh sửa thiết kế sau khi đặt hàng không?",
     answer:
-      "Bạn có thể chỉnh sửa thiết kế trước khi thanh toán. Sau khi đã thanh toán và đơn hàng vào sản xuất, không thể chỉnh sửa.",
+      "Bạn có thể chỉnh sửa tác phẩm trước khi thanh toán. Sau khi đã thanh toán và đơn hàng vào sản xuất, không thể chỉnh sửa.",
   },
   {
     question: "Chính sách đổi trả như thế nào?",
@@ -33,7 +33,7 @@ const FAQ_ITEMS = [
   {
     question: "File thiết kế cần định dạng gì?",
     answer:
-      "Bạn có thể thiết kế trực tiếp trên editor của chúng tôi hoặc upload file PNG, JPG với độ phân giải tối thiểu 300 DPI để đảm bảo chất lượng in.",
+      "Bạn có thể sáng tạo trực tiếp trên studio của chúng tôi hoặc upload file PNG, JPG với độ phân giải tối thiểu 300 DPI để đảm bảo chất lượng in.",
   },
 ]
 
@@ -47,15 +47,17 @@ function FAQItem({
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="border-b">
+    <div className="border-b border-studio-charcoal/10">
       <button
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between py-4 text-left"
       >
-        <span className="pr-4 font-medium">{question}</span>
+        <span className="pr-4 font-medium text-studio-charcoal">
+          {question}
+        </span>
         <ChevronDown
           className={cn(
-            "size-5 shrink-0 text-gray-500 transition-transform duration-200",
+            "size-5 shrink-0 text-studio-charcoal/40 transition-transform duration-200",
             open && "rotate-180"
           )}
         />
@@ -67,7 +69,7 @@ function FAQItem({
         )}
       >
         <div className="overflow-hidden">
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed text-studio-charcoal/60">
             {answer}
           </p>
         </div>
@@ -78,11 +80,13 @@ function FAQItem({
 
 export function FAQSection() {
   return (
-    <section id="faq" className="bg-gray-50 py-20">
+    <section id="faq" className="py-20">
       <div className="mx-auto max-w-3xl px-4">
         <div className="text-center">
-          <h2 className="text-3xl font-bold">Câu hỏi thường gặp</h2>
-          <p className="text-muted-foreground mt-3">
+          <h2 className="text-3xl font-bold text-studio-charcoal">
+            Câu hỏi thường gặp
+          </h2>
+          <p className="mt-3 text-studio-charcoal/60">
             Giải đáp các thắc mắc phổ biến
           </p>
         </div>

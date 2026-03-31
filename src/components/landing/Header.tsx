@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { Menu, ShoppingBag, X } from "lucide-react"
+import { Menu, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -11,21 +11,23 @@ import {
   SheetClose,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { cn } from "@/lib/utils"
 
 const NAV_LINKS = [
   { href: "/", label: "Trang chủ" },
-  { href: "/products", label: "Sản phẩm" },
+  { href: "/products", label: "Bộ sưu tập" },
 ]
 
 export function Header() {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className="border-border sticky top-0 z-50 border-b bg-white/80 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 border-b border-studio-wash bg-white/80 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-        <Link href="/" className="text-xl font-bold tracking-tight">
-          TShirt Custom
+        <Link
+          href="/"
+          className="text-xl font-bold tracking-tight text-studio-charcoal"
+        >
+          TShirt Studio
         </Link>
 
         {/* Desktop nav */}
@@ -34,20 +36,20 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+              className="text-sm text-studio-charcoal/60 transition-colors hover:text-studio-charcoal"
             >
               {link.label}
             </Link>
           ))}
           <Link href="/cart" className="relative">
-            <ShoppingBag className="text-muted-foreground hover:text-foreground size-5 transition-colors" />
+            <ShoppingBag className="size-5 text-studio-charcoal/60 transition-colors hover:text-studio-charcoal" />
           </Link>
         </nav>
 
         {/* Mobile nav */}
         <div className="flex items-center gap-2 md:hidden">
           <Link href="/cart" className="relative">
-            <ShoppingBag className="text-muted-foreground size-5" />
+            <ShoppingBag className="size-5 text-studio-charcoal/60" />
           </Link>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -63,7 +65,7 @@ export function Header() {
                   <SheetClose key={link.href} asChild>
                     <Link
                       href={link.href}
-                      className="text-foreground text-lg font-medium"
+                      className="text-lg font-medium text-studio-charcoal"
                     >
                       {link.label}
                     </Link>
