@@ -11,6 +11,7 @@ import TextContextPanel from "./TextContextPanel"
 import ImageUploader from "./ImageUploader"
 import LayerPanel from "./LayerPanel"
 import SideToggle from "./SideToggle"
+import TemplateGallery from "./TemplateGallery"
 
 interface DesignEditorRootProps {
   productId: string
@@ -33,8 +34,9 @@ export default function DesignEditorRoot({ productId }: DesignEditorRootProps) {
         {/* Canvas area */}
         <div className="relative flex flex-1 flex-col overflow-hidden">
           {/* Top bar: side toggle */}
-          <div className="flex items-center justify-center border-b border-black/5 bg-white px-4 py-2">
+          <div className="flex items-center justify-between border-b border-black/5 bg-white px-4 py-2">
             <SideToggle />
+            <TemplateGallery />
           </div>
 
           {/* Canvas + floating panels */}
