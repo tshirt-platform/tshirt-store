@@ -9,6 +9,7 @@ import { loadMockup } from "@/lib/canvas/mockup"
 export default function DesignCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const initializedRef = useRef(false)
   const setCanvas = useDesignStore((s) => s.setCanvas)
   const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
   const activeTool = useDesignStore((s) => s.activeTool)
@@ -31,7 +32,8 @@ export default function DesignCanvas() {
 
     async function init() {
       const fabric = await import("fabric")
-      if (!canvasRef.current) return
+      if (!canvasRef.current || initializedRef.current) return
+      initializedRef.current = true
 
       fabricCanvas = new fabric.Canvas(canvasRef.current, {
         width: 600,
@@ -67,6 +69,7 @@ export default function DesignCanvas() {
       container?.removeEventListener("dragover", preventDefault)
       container?.removeEventListener("drop", handleDrop)
       fabricCanvas?.dispose()
+      initializedRef.current = false
       setCanvas(null)
     }
   }, [setCanvas, saveSnapshot, handleDrop])
