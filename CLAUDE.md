@@ -99,6 +99,22 @@ export const medusa = new Medusa({
 })
 ```
 
+### Medusa SDK — Required Parameters
+- **`region_id` is REQUIRED** for any query involving `calculated_price` (products, variants). Without it → runtime error "Missing required pricing context to calculate prices - region_id"
+- Always fetch region first, then pass `region_id`:
+```ts
+async function getRegionId(): Promise<string> {
+  const { regions } = await medusa.store.region.list({ limit: 1 })
+  return (regions as Array<{ id: string }>)[0].id
+}
+
+// Then use in product queries:
+const regionId = await getRegionId()
+await medusa.store.product.list({ region_id: regionId, fields: "+variants.calculated_price" })
+```
+- The SDK automatically sends `x-publishable-api-key` header (configured via `publishableKey`)
+- When testing API manually (api-tester, curl), you MUST set header `x-publishable-api-key` for `/store/*` routes
+
 ### Zustand Design State
 ```ts
 // lib/store/design.store.ts
@@ -151,6 +167,20 @@ interface DesignState {
 - ALWAYS lazy import: `dynamic(() => import(...), { ssr: false })`
 - Import: `import * as fabric from 'fabric'` (v7 syntax)
 - Never import at top level — will crash SSR
+
+## Next.js 16 Gotchas
+- **`params` and `searchParams` are Promises** — must `await` them in page/layout components:
+```ts
+// ✅ Correct (Next.js 16)
+export default async function Page(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params
+}
+
+// ❌ Wrong (Next.js 14/15 pattern — breaks in 16)
+export default function Page({ params }: { params: { id: string } }) {}
+```
+- Use `<Link>` from `next/link` for navigation — not `<a>` tags (no client-side transitions with `<a>`)
+- Read `node_modules/next/dist/docs/` for the latest API docs when unsure
 
 ## Coding Rules
 
