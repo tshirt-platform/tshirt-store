@@ -20,9 +20,9 @@ const POLICY_LINKS = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-studio-wash bg-studio-cream">
-      <div className="mx-auto max-w-7xl px-4 py-12">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className="border-t border-black/5 bg-white">
+      <div className="mx-auto max-w-7xl px-6 py-16">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
             <Link
@@ -31,7 +31,7 @@ export function Footer() {
             >
               TShirt Studio
             </Link>
-            <p className="mt-2 text-sm text-studio-charcoal/60">
+            <p className="mt-3 text-sm leading-relaxed text-studio-charcoal/40">
               Nơi mỗi chiếc áo là một tác phẩm nghệ thuật. Sáng tạo, in ấn,
               giao hàng toàn quốc.
             </p>
@@ -39,10 +39,10 @@ export function Footer() {
 
           {/* Products */}
           <div>
-            <h3 className="text-sm font-semibold text-studio-charcoal">
+            <h3 className="text-xs font-semibold tracking-wider text-studio-charcoal/40 uppercase">
               Bộ sưu tập
             </h3>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-4 space-y-3">
               {PRODUCT_LINKS.map((link) => (
                 <li key={link.label}>
                   <Link
@@ -58,10 +58,10 @@ export function Footer() {
 
           {/* Support */}
           <div>
-            <h3 className="text-sm font-semibold text-studio-charcoal">
+            <h3 className="text-xs font-semibold tracking-wider text-studio-charcoal/40 uppercase">
               Hỗ trợ
             </h3>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-4 space-y-3">
               {SUPPORT_LINKS.map((link) => (
                 <li key={link.label}>
                   <Link
@@ -77,10 +77,10 @@ export function Footer() {
 
           {/* Policies */}
           <div>
-            <h3 className="text-sm font-semibold text-studio-charcoal">
+            <h3 className="text-xs font-semibold tracking-wider text-studio-charcoal/40 uppercase">
               Chính sách
             </h3>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-4 space-y-3">
               {POLICY_LINKS.map((link) => (
                 <li key={link.label}>
                   <Link
@@ -95,7 +95,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-studio-charcoal/10 pt-6 text-center text-sm text-studio-charcoal/40">
+        <div className="mt-14 border-t border-black/5 pt-6 text-center text-xs text-studio-charcoal/30">
           &copy; {new Date().getFullYear()} TShirt Studio. All rights reserved.
         </div>
       </div>

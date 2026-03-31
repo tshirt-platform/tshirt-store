@@ -7,7 +7,7 @@ import { useGSAP } from "@gsap/react"
 import { gsap } from "@/lib/gsap"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Check } from "lucide-react"
+import { Check, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const PRICING = [
@@ -55,8 +55,7 @@ const PRICING = [
   },
 ]
 
-// Wave offsets: left card up, center stays, right card down
-const WAVE_OFFSETS = [-15, 0, 15]
+const WAVE_OFFSETS = [-12, 0, 12]
 
 export function PricingSection() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -83,71 +82,106 @@ export function PricingSection() {
   }, { scope: sectionRef })
 
   return (
-    <section ref={sectionRef} className="bg-studio-cream py-20">
-      <div className="mx-auto max-w-7xl px-4">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-studio-charcoal">
-            Chọn canvas cho tác phẩm của bạn
-          </h2>
-          <p className="mt-3 text-studio-charcoal/60">
-            Giá đã bao gồm in thiết kế, chưa bao gồm phí vận chuyển
-          </p>
+    <section ref={sectionRef} className="py-28">
+      <div className="mx-auto max-w-7xl px-6">
+        {/* Split header */}
+        <div className="grid grid-cols-1 items-end gap-8 md:grid-cols-2">
+          <motion.h2
+            className="text-4xl font-bold leading-tight text-studio-charcoal md:text-5xl"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            Chọn canvas cho
+            <br />
+            tác phẩm của bạn
+          </motion.h2>
+          <motion.p
+            className="max-w-md text-lg text-studio-charcoal/50"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            Giá đã bao gồm in thiết kế, chưa bao gồm phí vận chuyển.
+          </motion.p>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+        {/* Cards */}
+        <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
           {PRICING.map((plan, index) => (
             <motion.div
               key={plan.name}
               ref={(el) => { cardRefs.current[index] = el }}
               className={cn(
-                "relative flex flex-col rounded-2xl border bg-white p-6 will-change-transform",
+                "relative flex flex-col rounded-2xl border p-8 will-change-transform",
                 plan.popular
-                  ? "border-studio-terracotta shadow-lg"
-                  : "border-studio-charcoal/10"
+                  ? "border-studio-charcoal bg-studio-charcoal text-white"
+                  : "border-studio-charcoal/10 bg-white"
               )}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               {plan.popular && (
-                <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-studio-terracotta text-white hover:bg-studio-terracotta/90">
+                <Badge className="absolute -top-2.5 left-6 bg-studio-terracotta text-white hover:bg-studio-terracotta/90">
                   Yêu thích nhất
                 </Badge>
               )}
-              <h3 className="text-lg font-semibold text-studio-charcoal">
+              <h3
+                className={cn(
+                  "text-lg font-semibold",
+                  plan.popular ? "text-white" : "text-studio-charcoal"
+                )}
+              >
                 {plan.name}
               </h3>
-              <p className="mt-1 text-sm text-studio-charcoal/60">
+              <p
+                className={cn(
+                  "mt-1 text-sm",
+                  plan.popular ? "text-white/50" : "text-studio-charcoal/50"
+                )}
+              >
                 {plan.description}
               </p>
-              <div className="mt-4">
-                <span className="text-3xl font-bold text-studio-charcoal">
-                  {plan.price}
-                </span>
+              <div className="mt-6">
+                <span className="text-4xl font-bold">{plan.price}</span>
               </div>
-              <ul className="mt-6 flex-1 space-y-3">
+              <ul className="mt-8 flex-1 space-y-3">
                 {plan.features.map((feature) => (
                   <li
                     key={feature}
-                    className="flex items-center gap-2 text-sm text-studio-charcoal/80"
+                    className={cn(
+                      "flex items-center gap-2.5 text-sm",
+                      plan.popular ? "text-white/70" : "text-studio-charcoal/60"
+                    )}
                   >
-                    <Check className="size-4 text-studio-sage" />
+                    <Check
+                      className={cn(
+                        "size-4 shrink-0",
+                        plan.popular ? "text-studio-terracotta" : "text-studio-sage"
+                      )}
+                    />
                     {feature}
                   </li>
                 ))}
               </ul>
               <Button
                 asChild
-                variant={plan.popular ? "default" : "outline"}
-                className={cn(
-                  "mt-6",
-                  plan.popular &&
-                    "bg-studio-terracotta text-white hover:bg-studio-terracotta/90"
-                )}
                 size="lg"
+                className={cn(
+                  "mt-8",
+                  plan.popular
+                    ? "bg-white text-studio-charcoal hover:bg-white/90"
+                    : "bg-studio-charcoal text-white hover:bg-studio-charcoal/90"
+                )}
               >
-                <Link href={plan.href}>Bắt đầu sáng tạo</Link>
+                <Link href={plan.href}>
+                  Bắt đầu sáng tạo
+                  <ArrowRight className="ml-2 size-4" />
+                </Link>
               </Button>
             </motion.div>
           ))}
