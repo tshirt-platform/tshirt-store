@@ -2,9 +2,15 @@
 
 import { useEffect } from "react"
 import { useDesignStore } from "@/lib/store/design.store"
+import { useDesignShortcuts } from "@/hooks/useDesignShortcuts"
 import { EditorErrorBoundary } from "./EditorErrorBoundary"
 import DesignCanvas from "./DesignCanvas"
 import ToolBar from "./ToolBar"
+import TextEditor from "./TextEditor"
+import TextContextPanel from "./TextContextPanel"
+import ImageUploader from "./ImageUploader"
+import LayerPanel from "./LayerPanel"
+import SideToggle from "./SideToggle"
 
 interface DesignEditorRootProps {
   productId: string
@@ -12,6 +18,7 @@ interface DesignEditorRootProps {
 
 export default function DesignEditorRoot({ productId }: DesignEditorRootProps) {
   const setProductId = useDesignStore((s) => s.setProductId)
+  useDesignShortcuts()
 
   useEffect(() => {
     setProductId(productId)
@@ -20,20 +27,31 @@ export default function DesignEditorRoot({ productId }: DesignEditorRootProps) {
   return (
     <EditorErrorBoundary>
       <div className="flex h-[calc(100vh-64px)] flex-col md:flex-row">
-        {/* Toolbar — top on mobile, left on desktop */}
+        {/* Toolbar */}
         <ToolBar />
 
         {/* Canvas area */}
-        <div className="flex flex-1 items-center justify-center overflow-auto bg-gray-100 p-4">
-          <DesignCanvas />
-        </div>
+        <div className="relative flex flex-1 flex-col overflow-hidden">
+          {/* Top bar: side toggle */}
+          <div className="flex items-center justify-center border-b border-black/5 bg-white px-4 py-2">
+            <SideToggle />
+          </div>
 
-        {/* Right panel placeholder — LayerPanel will go here */}
-        <div className="hidden w-64 border-l border-black/5 bg-white md:block">
-          <div className="p-4 text-xs text-studio-charcoal/40">
-            Layer Panel
+          {/* Canvas + floating panels */}
+          <div className="relative flex flex-1 items-center justify-center overflow-auto bg-gray-100 p-4">
+            <TextContextPanel />
+            <DesignCanvas />
           </div>
         </div>
+
+        {/* Right panel — layers */}
+        <div className="hidden w-64 border-l border-black/5 bg-white md:block">
+          <LayerPanel />
+        </div>
+
+        {/* Invisible components */}
+        <TextEditor />
+        <ImageUploader />
       </div>
     </EditorErrorBoundary>
   )
