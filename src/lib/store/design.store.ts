@@ -1,28 +1,27 @@
 import { create } from "zustand"
 import type { ActiveTool, DesignSide } from "@tshirt/shared"
 import type { Canvas } from "fabric"
+import { loadMockup } from "@/lib/canvas/mockup"
+import {
+  drawPrintAreaOverlay,
+  removePrintAreaOverlay,
+  applyPrintClipAll,
+} from "@/lib/canvas/constraints"
 
 const MAX_HISTORY = 30
 
 interface DesignStoreState {
-  // Canvas reference (set after fabric init)
   canvas: Canvas | null
-  // Product context
   productId: string | null
   variantId: string | null
-  // Editor state
   side: DesignSide
   activeTool: ActiveTool
-  // History (JSON snapshots)
   history: string[]
   historyIndex: number
-  // Per-side canvas JSON
   frontJson: string | null
   backJson: string | null
-  // Export URLs
   pngUrl: string | null
   jsonUrl: string | null
-  // Actions
   setCanvas: (canvas: Canvas | null) => void
   setProductId: (id: string) => void
   setVariantId: (id: string | null) => void
@@ -57,26 +56,38 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     const { canvas, side } = get()
     if (!canvas || newSide === side) return
 
-    // Save current side JSON
-    const currentJson = JSON.stringify(canvas.toJSON())
+    // Strip overlay before saving (so it's not duplicated on restore)
+    removePrintAreaOverlay(canvas)
+
+    // Save user objects only (no backgroundImage)
+    const json = canvas.toJSON() as Record<string, unknown>
+    delete json.backgroundImage
+    const currentJson = JSON.stringify(json)
+
     const update =
       side === "front"
         ? { frontJson: currentJson }
         : { backJson: currentJson }
 
-    // Load target side JSON
+    // Load target side
     const targetJson =
       newSide === "front" ? get().frontJson : get().backJson
 
-    if (targetJson) {
-      canvas.loadFromJSON(JSON.parse(targetJson)).then(() => {
-        canvas.renderAll()
-      })
-    } else {
-      canvas.clear()
-      canvas.backgroundColor = "#ffffff"
+    // Clear canvas, reload mockup + overlay + user objects
+    const objects = canvas.getObjects().slice()
+    objects.forEach((obj) => canvas.remove(obj))
+
+    loadMockup(canvas, newSide).then(async () => {
+      if (targetJson) {
+        const parsed = JSON.parse(targetJson)
+        await canvas.loadFromJSON(parsed)
+        await loadMockup(canvas, newSide)
+      }
+      await drawPrintAreaOverlay(canvas, newSide)
+      // Re-apply clip paths for the new side's print area
+      await applyPrintClipAll(canvas, newSide)
       canvas.renderAll()
-    }
+    })
 
     set({ ...update, side: newSide, history: [], historyIndex: -1 })
   },

@@ -1,41 +1,36 @@
 "use client"
 
-import { useState } from "react"
+import Image from "next/image"
 import type { FabricObject } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
-import {
-  TEMPLATES,
-  TEMPLATE_CATEGORIES,
-  type TemplateCategory,
-} from "@/lib/canvas/templates"
-import { Button } from "@/components/ui/button"
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
-import { LayoutGrid } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { TEMPLATES } from "@/lib/canvas/templates"
+import { getPrintArea, applyPrintClip } from "@/lib/canvas/constraints"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 
-export default function TemplateGallery() {
+interface TemplateGalleryProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export default function TemplateGallery({
+  open,
+  onOpenChange,
+}: TemplateGalleryProps) {
   const canvas = useDesignStore((s) => s.canvas)
+  const side = useDesignStore((s) => s.side)
   const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
-  const [open, setOpen] = useState(false)
-  const [activeCategory, setActiveCategory] =
-    useState<TemplateCategory>("sport")
 
-  const filtered = TEMPLATES.filter((t) => t.category === activeCategory)
-
-  async function loadTemplate(fabricJson: string) {
+  async function loadTemplate(src: string) {
     if (!canvas) return
 
     const hasObjects = canvas
       .getObjects()
       .some(
         (o) =>
-          !(o as FabricObject & { excludeFromExport?: boolean }).excludeFromExport &&
-          !(o as FabricObject & { _isMockup?: boolean })._isMockup
+          !(o as FabricObject & { excludeFromExport?: boolean })
+            .excludeFromExport &&
+          !(o as FabricObject & { _isMockup?: boolean })._isMockup &&
+          !(o as FabricObject & { _isPrintOverlay?: boolean })._isPrintOverlay
       )
 
     if (hasObjects) {
@@ -48,76 +43,69 @@ export default function TemplateGallery() {
     // Remove user objects, keep mockup + overlay
     const toRemove = canvas.getObjects().filter(
       (o) =>
-        !(o as FabricObject & { excludeFromExport?: boolean }).excludeFromExport &&
-        !(o as FabricObject & { _isMockup?: boolean })._isMockup
+        !(o as FabricObject & { excludeFromExport?: boolean })
+          .excludeFromExport &&
+        !(o as FabricObject & { _isMockup?: boolean })._isMockup &&
+        !(o as FabricObject & { _isPrintOverlay?: boolean })._isPrintOverlay
     )
     toRemove.forEach((o) => canvas.remove(o))
 
-    // Load template objects
-    const data = JSON.parse(fabricJson)
-    if (data.objects) {
-      const fabric = await import("fabric")
-      for (const objData of data.objects) {
-        const enlivened = await fabric.util.enlivenObjects([objData])
-        enlivened.forEach((obj) => canvas.add(obj as FabricObject))
-      }
-    }
+    // Load template image
+    const fabric = await import("fabric")
+    const img = await fabric.FabricImage.fromURL(src)
+    const printArea = getPrintArea(side)
 
+    const imgW = img.width ?? 1
+    const imgH = img.height ?? 1
+    const scale = Math.min(
+      printArea.width / imgW,
+      printArea.height / imgH,
+      1
+    )
+    const scaledW = imgW * scale
+    const scaledH = imgH * scale
+
+    img.set({
+      scaleX: scale,
+      scaleY: scale,
+      left: printArea.x + (printArea.width - scaledW) / 2,
+      top: printArea.y + (printArea.height - scaledH) / 2,
+      originX: "left",
+      originY: "top",
+    })
+
+    await applyPrintClip(img, side)
+    canvas.add(img)
+    canvas.setActiveObject(img)
     canvas.renderAll()
     saveSnapshot()
-    setOpen(false)
+    onOpenChange(false)
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" title="Mẫu thiết kế" className="size-10 rounded-lg">
-          <LayoutGrid className="size-5" />
-        </Button>
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-80 p-0">
         <SheetTitle className="border-b border-black/5 px-4 py-3 text-sm font-semibold">
-          Bộ sưu tập mẫu
+          Mẫu thiết kế
         </SheetTitle>
 
-        {/* Category tabs */}
-        <div className="flex gap-1 overflow-x-auto border-b border-black/5 px-4 py-2">
-          {TEMPLATE_CATEGORIES.map((cat) => (
-            <Button
-              key={cat.value}
-              variant="ghost"
-              size="sm"
-              onClick={() => setActiveCategory(cat.value)}
-              className={cn(
-                "h-7 shrink-0 rounded-md px-3 text-xs",
-                activeCategory === cat.value &&
-                  "bg-studio-charcoal text-white hover:bg-studio-charcoal/90 hover:text-white"
-              )}
-            >
-              {cat.label}
-            </Button>
-          ))}
-        </div>
-
-        {/* Template grid */}
-        <div className="grid grid-cols-2 gap-2 p-4">
-          {filtered.map((tpl) => (
+        <div className="grid grid-cols-2 gap-3 p-4">
+          {TEMPLATES.map((tpl) => (
             <button
               key={tpl.id}
-              onClick={() => loadTemplate(tpl.fabricJson)}
-              className={cn(
-                "group flex flex-col overflow-hidden rounded-lg border border-black/5 transition-shadow hover:shadow-md"
-              )}
+              onClick={() => loadTemplate(tpl.src)}
+              className="group overflow-hidden rounded-lg border border-black/10 transition-shadow hover:shadow-md"
             >
-              <div
-                className={cn(
-                  "flex h-24 items-center justify-center text-xs font-medium",
-                  tpl.color
-                )}
-              >
-                {tpl.name}
+              <div className="relative aspect-square bg-gray-50">
+                <Image
+                  src={tpl.src}
+                  alt={tpl.name}
+                  fill
+                  className="object-contain p-2 transition-transform group-hover:scale-105"
+                  sizes="140px"
+                />
               </div>
-              <div className="p-2 text-left text-xs text-studio-charcoal/60">
+              <div className="border-t border-black/5 px-2 py-1.5 text-xs text-studio-charcoal/60">
                 {tpl.name}
               </div>
             </button>

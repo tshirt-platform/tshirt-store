@@ -1,9 +1,13 @@
 "use client"
 
 import { useEffect, useRef, useCallback } from "react"
-import type { Canvas } from "fabric"
+import type { Canvas, FabricObject } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
-import { drawPrintAreaOverlay } from "@/lib/canvas/constraints"
+import {
+  CANVAS_SIZE,
+  drawPrintAreaOverlay,
+  applyPrintClip,
+} from "@/lib/canvas/constraints"
 import { loadMockup } from "@/lib/canvas/mockup"
 
 export default function DesignCanvas() {
@@ -14,18 +18,14 @@ export default function DesignCanvas() {
   const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
   const activeTool = useDesignStore((s) => s.activeTool)
 
-  const handleDrop = useCallback(
-    (e: DragEvent) => {
-      e.preventDefault()
-      const file = e.dataTransfer?.files[0]
-      if (!file) return
-      // Dispatch custom event for ImageUploader to handle
-      window.dispatchEvent(
-        new CustomEvent("design-editor:drop-file", { detail: file })
-      )
-    },
-    []
-  )
+  const handleDrop = useCallback((e: DragEvent) => {
+    e.preventDefault()
+    const file = e.dataTransfer?.files[0]
+    if (!file) return
+    window.dispatchEvent(
+      new CustomEvent("design-editor:drop-file", { detail: file })
+    )
+  }, [])
 
   useEffect(() => {
     let fabricCanvas: Canvas | null = null
@@ -36,21 +36,35 @@ export default function DesignCanvas() {
       initializedRef.current = true
 
       fabricCanvas = new fabric.Canvas(canvasRef.current, {
-        width: 600,
-        height: 600,
-        backgroundColor: "#ffffff",
+        width: CANVAS_SIZE.width,
+        height: CANVAS_SIZE.height,
+        backgroundColor: "transparent",
         selection: true,
         preserveObjectStacking: true,
       })
 
-      // Draw print area overlay (mockup will be added later with real images)
-      await drawPrintAreaOverlay(fabricCanvas)
+      // Load t-shirt mockup as background (always starts on "front")
+      await loadMockup(fabricCanvas, "front")
+      await drawPrintAreaOverlay(fabricCanvas, "front")
 
-      // Save initial snapshot
       setCanvas(fabricCanvas)
       saveSnapshot()
 
-      // Track modifications for undo history
+      // Auto-apply clipPath to new user objects
+      fabricCanvas.on("object:added", (e: { target: FabricObject }) => {
+        const obj = e.target
+        const isOverlay = (obj as FabricObject & { _isPrintOverlay?: boolean })
+          ._isPrintOverlay
+        const isExcluded = (
+          obj as FabricObject & { excludeFromExport?: boolean }
+        ).excludeFromExport
+        if (!isOverlay && !isExcluded && !obj.clipPath) {
+          const side = useDesignStore.getState().side
+          applyPrintClip(obj, side)
+        }
+      })
+
+      // Save snapshot after modifications
       fabricCanvas.on("object:modified", () => {
         saveSnapshot()
       })
@@ -76,12 +90,10 @@ export default function DesignCanvas() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-1 items-center justify-center bg-gray-200"
+      className="flex flex-1 items-center justify-center"
       data-tool={activeTool}
     >
-      <div className="[&_.canvas-container]:shadow-lg">
-        <canvas ref={canvasRef} />
-      </div>
+      <canvas ref={canvasRef} />
     </div>
   )
 }

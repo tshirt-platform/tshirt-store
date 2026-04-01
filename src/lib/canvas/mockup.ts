@@ -1,53 +1,36 @@
 import type { DesignSide } from "@tshirt/shared"
-import type { Canvas, FabricObject } from "fabric"
+import type { Canvas } from "fabric"
+import { CANVAS_SIZE } from "./constraints"
 
-// Color placeholder mockups (will be replaced with real images later)
-const MOCKUP_COLORS: Record<string, string> = {
-  white: "#ffffff",
-  black: "#1a1a1a",
-  red: "#dc2626",
-  blue: "#2563eb",
-  green: "#16a34a",
+const MOCKUP_IMAGES: Record<DesignSide, string> = {
+  front: "/images/design-editor/front-unline.png",
+  back: "/images/design-editor/back-unline.png",
 }
-
-const DEFAULT_COLOR = "white"
 
 export async function loadMockup(
   canvas: Canvas,
-  color: string = DEFAULT_COLOR,
-  _side: DesignSide = "front"
+  side: DesignSide = "front"
 ) {
   const fabric = await import("fabric")
-  const fill = MOCKUP_COLORS[color] ?? MOCKUP_COLORS[DEFAULT_COLOR]
+  const url = MOCKUP_IMAGES[side]
 
-  // Placeholder: centered T-shirt shape
-  const mockupRect = new fabric.Rect({
-    left: 50,
-    top: 20,
-    width: 500,
-    height: 560,
-    rx: 12,
-    ry: 12,
-    fill,
-    selectable: false,
-    evented: false,
-    excludeFromExport: true,
+  const img = await fabric.FabricImage.fromURL(url)
+
+  // Scale image to fit canvas while maintaining aspect ratio
+  const scale = Math.min(
+    CANVAS_SIZE.width / (img.width ?? 1),
+    CANVAS_SIZE.height / (img.height ?? 1)
+  )
+  img.scale(scale)
+
+  // Center on canvas
+  img.set({
+    left: (CANVAS_SIZE.width - img.getScaledWidth()) / 2,
+    top: (CANVAS_SIZE.height - img.getScaledHeight()) / 2,
+    originX: "left",
+    originY: "top",
   })
 
-  // Remove previous mockup if exists
-  const existing = canvas
-    .getObjects()
-    .find(
-      (obj) =>
-        (obj as FabricObject & { _isMockup?: boolean })._isMockup
-    )
-  if (existing) canvas.remove(existing)
-
-  // Tag as mockup for later removal
-  ;(mockupRect as FabricObject & { _isMockup?: boolean })._isMockup =
-    true
-
-  canvas.add(mockupRect)
-  canvas.sendObjectToBack(mockupRect)
+  canvas.backgroundImage = img
   canvas.renderAll()
 }

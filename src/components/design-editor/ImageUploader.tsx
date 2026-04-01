@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react"
 import { useDesignStore } from "@/lib/store/design.store"
-import { PRINT_AREA } from "@/lib/canvas/constraints"
+import { getPrintArea, scaleForDpi } from "@/lib/canvas/constraints"
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/svg+xml"]
@@ -13,6 +13,8 @@ export default function ImageUploader() {
   const activeTool = useDesignStore((s) => s.activeTool)
   const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
   const setActiveTool = useDesignStore((s) => s.setActiveTool)
+
+  const side = useDesignStore((s) => s.side)
 
   const addImage = useCallback(
     async (file: File) => {
@@ -30,16 +32,21 @@ export default function ImageUploader() {
       const fabric = await import("fabric")
       const url = URL.createObjectURL(file)
       const img = await fabric.FabricImage.fromURL(url)
+      const printArea = getPrintArea(side)
 
-      const scale = Math.min(
-        PRINT_AREA.width / (img.width ?? 1),
-        PRINT_AREA.height / (img.height ?? 1),
-        1
-      )
-      img.scale(scale)
+      const imgW = img.width ?? 1
+      const imgH = img.height ?? 1
+      // Scale to best DPI (at least 300) while fitting print area
+      const scale = scaleForDpi(imgW, imgH, side)
+      const scaledW = imgW * scale
+      const scaledH = imgH * scale
       img.set({
-        left: PRINT_AREA.x + (PRINT_AREA.width - img.getScaledWidth()) / 2,
-        top: PRINT_AREA.y + (PRINT_AREA.height - img.getScaledHeight()) / 2,
+        scaleX: scale,
+        scaleY: scale,
+        left: printArea.x + (printArea.width - scaledW) / 2,
+        top: printArea.y + (printArea.height - scaledH) / 2,
+        originX: "left",
+        originY: "top",
       })
 
       canvas.add(img)
@@ -48,7 +55,7 @@ export default function ImageUploader() {
       saveSnapshot()
       setActiveTool("select")
     },
-    [canvas, saveSnapshot, setActiveTool]
+    [canvas, saveSnapshot, setActiveTool, side]
   )
 
   // Open file dialog when image tool is activated

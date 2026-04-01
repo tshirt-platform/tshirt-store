@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from "react"
 import type { TPointerEventInfo } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
-import { PRINT_AREA } from "@/lib/canvas/constraints"
+import { getPrintArea } from "@/lib/canvas/constraints"
 
 const DEFAULT_FONT = "Inter"
 const DEFAULT_SIZE = 32
@@ -15,12 +15,15 @@ export default function TextEditor() {
   const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
   const setActiveTool = useDesignStore((s) => s.setActiveTool)
 
+  const side = useDesignStore((s) => s.side)
+
   const handleCanvasClick = useCallback(
     async (opt: TPointerEventInfo) => {
       if (activeTool !== "text" || !canvas) return
 
       const fabric = await import("fabric")
       const pointer = canvas.getViewportPoint(opt.e)
+      const printArea = getPrintArea(side)
 
       const text = new fabric.IText("Nhập văn bản", {
         left: pointer.x,
@@ -34,12 +37,12 @@ export default function TextEditor() {
 
       // Clamp inside print area
       const clampedLeft = Math.max(
-        PRINT_AREA.x + 20,
-        Math.min(pointer.x, PRINT_AREA.x + PRINT_AREA.width - 20)
+        printArea.x + 20,
+        Math.min(pointer.x, printArea.x + printArea.width - 20)
       )
       const clampedTop = Math.max(
-        PRINT_AREA.y + 20,
-        Math.min(pointer.y, PRINT_AREA.y + PRINT_AREA.height - 20)
+        printArea.y + 20,
+        Math.min(pointer.y, printArea.y + printArea.height - 20)
       )
       text.set({ left: clampedLeft, top: clampedTop })
 
@@ -49,7 +52,7 @@ export default function TextEditor() {
       saveSnapshot()
       setActiveTool("select")
     },
-    [canvas, activeTool, saveSnapshot, setActiveTool]
+    [canvas, activeTool, saveSnapshot, setActiveTool, side]
   )
 
   useEffect(() => {
