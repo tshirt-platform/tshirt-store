@@ -1,5 +1,5 @@
 import { DESIGN_EXPORT } from "@tshirt/shared"
-import type { Canvas, FabricObject } from "fabric"
+import type { Canvas } from "fabric"
 
 /**
  * Export canvas content as high-resolution PNG blob (3000x3000 @ 300 DPI).
@@ -12,9 +12,8 @@ export function exportToPng(canvas: Canvas): Blob {
     format: "png",
     quality: 1,
     multiplier,
-    filter: (obj: FabricObject) =>
-      !(obj as FabricObject & { excludeFromExport?: boolean })
-        .excludeFromExport,
+    filter: (obj) =>
+      !(obj as unknown as { excludeFromExport?: boolean }).excludeFromExport,
   })
 
   return dataUrlToBlob(dataUrl)
@@ -22,7 +21,7 @@ export function exportToPng(canvas: Canvas): Blob {
 
 /** Export canvas state as JSON string (for re-editing later). */
 export function exportToJson(canvas: Canvas): string {
-  const json = canvas.toJSON([
+  const json = canvas.toObject([
     "excludeFromExport",
     "name",
     "layerName",
