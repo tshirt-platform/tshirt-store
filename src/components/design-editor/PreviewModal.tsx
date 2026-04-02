@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Loader2, ShoppingCart, ArrowLeft } from "lucide-react"
 import {
@@ -16,6 +15,8 @@ import { useDesignStore } from "@/lib/store/design.store"
 import { exportToPng, exportToJson } from "@/lib/canvas/export"
 import { uploadDesign } from "@/lib/upload"
 import { validateAllObjects } from "@/lib/canvas/constraints"
+import { renderMockup } from "@/lib/canvas/mockup-renderer"
+import { MOCKUP_CONFIGS } from "@/lib/canvas/mockup-config"
 import { toast } from "sonner"
 import ValidationWarning from "./ValidationWarning"
 
@@ -26,7 +27,6 @@ interface PreviewModalProps {
 
 type ExportStep =
   | "idle"
-  | "validating"
   | "exporting"
   | "uploading"
   | "adding"
@@ -35,20 +35,12 @@ type ExportStep =
 
 const STEP_LABELS: Record<ExportStep, string> = {
   idle: "",
-  validating: "Kiểm tra thiết kế...",
   exporting: "Xuất thiết kế...",
   uploading: "Tải lên...",
   adding: "Thêm vào giỏ hàng...",
   done: "Hoàn tất!",
   error: "Có lỗi xảy ra",
 }
-
-// Mockup images for preview
-const MOCKUP_IMAGES = [
-  "/images/mockup/09-blank-white-shirt.jpg",
-  "/images/mockup/01-woman-white-tshirt-front.jpg",
-  "/images/mockup/03-man-white-crew-neck.jpg",
-]
 
 export default function PreviewModal({
   open,
@@ -60,22 +52,54 @@ export default function PreviewModal({
   const variantId = useDesignStore((s) => s.variantId)
   const productId = useDesignStore((s) => s.productId)
 
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [mockupUrls, setMockupUrls] = useState<string[]>([])
+  const [selectedIdx, setSelectedIdx] = useState(0)
+  const [rendering, setRendering] = useState(false)
   const [step, setStep] = useState<ExportStep>("idle")
-  const [selectedMockup, setSelectedMockup] = useState(0)
   const [validationOpen, setValidationOpen] = useState(false)
   const [outOfBoundsCount, setOutOfBoundsCount] = useState(0)
 
-  // Generate preview when modal opens
+  // Generate realistic mockup previews when modal opens
   useEffect(() => {
     if (!open || !canvas) return
-    try {
-      const blob = exportToPng(canvas)
-      const url = URL.createObjectURL(blob)
-      setPreviewUrl(url)
-      return () => URL.revokeObjectURL(url)
-    } catch {
-      setPreviewUrl(null)
+
+    let cancelled = false
+    const urls: string[] = []
+
+    async function generate() {
+      setRendering(true)
+      try {
+        const designBlob = exportToPng(canvas!)
+
+        // Render each mockup config in parallel
+        const results = await Promise.allSettled(
+          MOCKUP_CONFIGS.map((config) => renderMockup(config, designBlob))
+        )
+
+        if (cancelled) return
+
+        for (const result of results) {
+          if (result.status === "fulfilled") {
+            const url = URL.createObjectURL(result.value)
+            urls.push(url)
+          }
+        }
+
+        setMockupUrls(urls)
+        setSelectedIdx(0)
+      } catch {
+        // Fallback: no mockup rendered
+        setMockupUrls([])
+      } finally {
+        if (!cancelled) setRendering(false)
+      }
+    }
+
+    generate()
+
+    return () => {
+      cancelled = true
+      urls.forEach((u) => URL.revokeObjectURL(u))
     }
   }, [open, canvas])
 
@@ -135,107 +159,119 @@ export default function PreviewModal({
   }, [canvas, side, variantId, productId, onOpenChange, router])
 
   const isProcessing = !["idle", "done", "error"].includes(step)
+  const currentUrl = mockupUrls[selectedIdx] ?? null
 
   return (
     <>
-    <ValidationWarning
-      open={validationOpen}
-      onOpenChange={setValidationOpen}
-      outOfBoundsCount={outOfBoundsCount}
-      onProceed={doExportAndUpload}
-      onGoBack={() => {
-        setValidationOpen(false)
-        onOpenChange(false)
-      }}
-    />
-    <Dialog open={open} onOpenChange={isProcessing ? undefined : onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Xem trước thiết kế</DialogTitle>
-        </DialogHeader>
+      <ValidationWarning
+        open={validationOpen}
+        onOpenChange={setValidationOpen}
+        outOfBoundsCount={outOfBoundsCount}
+        onProceed={doExportAndUpload}
+        onGoBack={() => {
+          setValidationOpen(false)
+          onOpenChange(false)
+        }}
+      />
+      <Dialog
+        open={open}
+        onOpenChange={isProcessing ? undefined : onOpenChange}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Xem trước thiết kế</DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Mockup preview area */}
-          <div className="relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-lg bg-gray-100">
-            <Image
-              src={MOCKUP_IMAGES[selectedMockup]}
-              alt="T-shirt mockup"
-              fill
-              className="object-cover"
-              priority
-            />
-            {previewUrl && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative h-[45%] w-[35%] translate-y-[-5%]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={previewUrl}
-                    alt="Design preview"
-                    className="h-full w-full object-contain"
-                  />
+          <div className="space-y-4">
+            {/* Mockup preview area */}
+            <div className="relative mx-auto aspect-[4/5] w-full max-w-lg overflow-hidden rounded-lg bg-gray-50">
+              {rendering && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="size-5 animate-spin" />
+                    Đang tạo mockup...
+                  </div>
                 </div>
+              )}
+              {currentUrl && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={currentUrl}
+                  alt="Mockup preview"
+                  className="h-full w-full object-contain"
+                />
+              )}
+              {!currentUrl && !rendering && (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  Không có mockup nào
+                </div>
+              )}
+            </div>
+
+            {/* Mockup thumbnails */}
+            {mockupUrls.length > 1 && (
+              <div className="flex justify-center gap-2">
+                {mockupUrls.map((url, i) => (
+                  <button
+                    key={url}
+                    onClick={() => setSelectedIdx(i)}
+                    className={`relative h-16 w-14 overflow-hidden rounded-md border-2 transition ${
+                      selectedIdx === i
+                        ? "border-studio-charcoal"
+                        : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={MOCKUP_CONFIGS[i]?.label ?? `Mockup ${i + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Mockup label + side */}
+            <p className="text-center text-sm text-muted-foreground">
+              {MOCKUP_CONFIGS[selectedIdx]?.label ?? "Mockup"} —{" "}
+              {side === "front" ? "Mặt trước" : "Mặt sau"}
+            </p>
+
+            {/* Processing status */}
+            {step !== "idle" && (
+              <div className="flex items-center justify-center gap-2 text-sm">
+                {isProcessing && (
+                  <Loader2 className="size-4 animate-spin" />
+                )}
+                <span>{STEP_LABELS[step]}</span>
               </div>
             )}
           </div>
 
-          {/* Mockup thumbnails */}
-          <div className="flex justify-center gap-2">
-            {MOCKUP_IMAGES.map((src, i) => (
-              <button
-                key={src}
-                onClick={() => setSelectedMockup(i)}
-                className={`relative h-14 w-14 overflow-hidden rounded-md border-2 transition ${
-                  selectedMockup === i
-                    ? "border-studio-charcoal"
-                    : "border-transparent opacity-60 hover:opacity-100"
-                }`}
-              >
-                <Image
-                  src={src}
-                  alt={`Mockup ${i + 1}`}
-                  fill
-                  className="object-cover"
-                />
-              </button>
-            ))}
-          </div>
-
-          {/* Side indicator */}
-          <p className="text-center text-sm text-muted-foreground">
-            Mặt: {side === "front" ? "Trước" : "Sau"}
-          </p>
-
-          {/* Processing status */}
-          {step !== "idle" && (
-            <div className="flex items-center justify-center gap-2 text-sm">
-              {isProcessing && (
-                <Loader2 className="size-4 animate-spin" />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isProcessing}
+            >
+              <ArrowLeft className="mr-2 size-4" />
+              Quay lại chỉnh sửa
+            </Button>
+            <Button
+              onClick={handleAddToCart}
+              disabled={isProcessing || !canvas || rendering}
+            >
+              {isProcessing ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <ShoppingCart className="mr-2 size-4" />
               )}
-              <span>{STEP_LABELS[step]}</span>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isProcessing}
-          >
-            <ArrowLeft className="mr-2 size-4" />
-            Quay lại chỉnh sửa
-          </Button>
-          <Button onClick={handleAddToCart} disabled={isProcessing || !canvas}>
-            {isProcessing ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
-            ) : (
-              <ShoppingCart className="mr-2 size-4" />
-            )}
-            Thêm vào giỏ hàng
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+              Thêm vào giỏ hàng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
