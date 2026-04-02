@@ -17,7 +17,7 @@ import { exportToPng, exportToJson } from "@/lib/canvas/export"
 import { uploadDesign } from "@/lib/upload"
 import { validateAllObjects } from "@/lib/canvas/constraints"
 import { toast } from "sonner"
-import type { DesignSide } from "@tshirt/shared"
+import ValidationWarning from "./ValidationWarning"
 
 interface PreviewModalProps {
   open: boolean
@@ -63,6 +63,8 @@ export default function PreviewModal({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [step, setStep] = useState<ExportStep>("idle")
   const [selectedMockup, setSelectedMockup] = useState(0)
+  const [validationOpen, setValidationOpen] = useState(false)
+  const [outOfBoundsCount, setOutOfBoundsCount] = useState(0)
 
   // Generate preview when modal opens
   useEffect(() => {
@@ -77,33 +79,36 @@ export default function PreviewModal({
     }
   }, [open, canvas])
 
-  const handleAddToCart = useCallback(async () => {
+  // Phase 1: Validate before exporting
+  const handleAddToCart = useCallback(() => {
     if (!canvas || !productId) return
 
-    try {
-      // Step 1: Validate
-      setStep("validating")
-      const { valid, outOfBounds } = validateAllObjects(canvas, side)
-      if (!valid) {
-        toast.warning(
-          `${outOfBounds.length} phần tử nằm ngoài vùng in. Thiết kế vẫn sẽ được xuất.`
-        )
-      }
+    const { valid, outOfBounds } = validateAllObjects(canvas, side)
+    if (!valid) {
+      setOutOfBoundsCount(outOfBounds.length)
+      setValidationOpen(true)
+      return
+    }
+    doExportAndUpload()
+  }, [canvas, productId, side])
 
-      // Step 2: Export
+  // Phase 2: Export, upload, and add to cart
+  const doExportAndUpload = useCallback(async () => {
+    if (!canvas || !productId) return
+    setValidationOpen(false)
+
+    try {
       setStep("exporting")
       const pngBlob = exportToPng(canvas)
       const jsonStr = exportToJson(canvas)
       const jsonBlob = new Blob([jsonStr], { type: "application/json" })
 
-      // Step 3: Upload
       setStep("uploading")
       const [pngResult, jsonResult] = await Promise.all([
         uploadDesign(pngBlob, "image/png", side),
         uploadDesign(jsonBlob, "application/json", side),
       ])
 
-      // Step 4: Add to cart (store URLs for now)
       setStep("adding")
       useDesignStore.getState().setPngUrl(pngResult.fileUrl)
       useDesignStore.getState().setJsonUrl(jsonResult.fileUrl)
@@ -132,6 +137,17 @@ export default function PreviewModal({
   const isProcessing = !["idle", "done", "error"].includes(step)
 
   return (
+    <>
+    <ValidationWarning
+      open={validationOpen}
+      onOpenChange={setValidationOpen}
+      outOfBoundsCount={outOfBoundsCount}
+      onProceed={doExportAndUpload}
+      onGoBack={() => {
+        setValidationOpen(false)
+        onOpenChange(false)
+      }}
+    />
     <Dialog open={open} onOpenChange={isProcessing ? undefined : onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
@@ -220,5 +236,6 @@ export default function PreviewModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   )
 }
