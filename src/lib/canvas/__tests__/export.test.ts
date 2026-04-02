@@ -24,7 +24,7 @@ describe("exportToPng", () => {
     expect(blob.type).toBe("image/png")
   })
 
-  it("uses correct multiplier (3000/800 = 3.75)", () => {
+  it("uses correct multiplier (EXPORT_WIDTH/800 = 3.75)", () => {
     const canvas = createMockCanvas()
     exportToPng(canvas as never)
     expect(canvas.toDataURL).toHaveBeenCalledWith(

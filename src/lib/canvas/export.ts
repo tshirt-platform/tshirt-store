@@ -1,12 +1,14 @@
-import { DESIGN_EXPORT } from "@tshirt/shared"
 import type { Canvas } from "fabric"
+
+// Matches @tshirt/shared DESIGN_EXPORT — inlined to avoid runtime import
+const EXPORT_WIDTH = 3000
 
 /**
  * Export canvas content as high-resolution PNG blob (3000x3000 @ 300 DPI).
  * Excludes mockup background and overlay objects.
  */
 export function exportToPng(canvas: Canvas): Blob {
-  const multiplier = DESIGN_EXPORT.WIDTH / canvas.getWidth()
+  const multiplier = EXPORT_WIDTH / canvas.getWidth()
 
   const dataUrl = canvas.toDataURL({
     format: "png",
