@@ -1,8 +1,10 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { Eye } from "lucide-react"
 import { useDesignStore } from "@/lib/store/design.store"
 import { useDesignShortcuts } from "@/hooks/useDesignShortcuts"
+import { Button } from "@/components/ui/button"
 import { EditorErrorBoundary } from "./EditorErrorBoundary"
 import DesignCanvas from "./DesignCanvas"
 import ToolBar from "./ToolBar"
@@ -11,6 +13,7 @@ import TextContextPanel from "./TextContextPanel"
 import ImageUploader from "./ImageUploader"
 import LayerPanel from "./LayerPanel"
 import SideToggle from "./SideToggle"
+import PreviewModal from "./PreviewModal"
 
 import DpiIndicator from "./DpiIndicator"
 
@@ -20,6 +23,7 @@ interface DesignEditorRootProps {
 
 export default function DesignEditorRoot({ productId }: DesignEditorRootProps) {
   const setProductId = useDesignStore((s) => s.setProductId)
+  const [previewOpen, setPreviewOpen] = useState(false)
   useDesignShortcuts()
 
   useEffect(() => {
@@ -34,12 +38,20 @@ export default function DesignEditorRoot({ productId }: DesignEditorRootProps) {
 
         {/* Canvas area */}
         <div className="relative flex flex-1 flex-col overflow-hidden">
-          {/* Top bar: side toggle + DPI indicator */}
+          {/* Top bar: side toggle + DPI indicator + preview button */}
           <div className="flex items-center justify-between border-b border-black/5 bg-white px-4 py-2">
             <div className="flex items-center gap-3">
               <SideToggle />
               <DpiIndicator />
             </div>
+            <Button
+              onClick={() => setPreviewOpen(true)}
+              className="gap-2"
+              size="sm"
+            >
+              <Eye className="size-4" />
+              Xem trước
+            </Button>
           </div>
 
           {/* Canvas + floating panels */}
@@ -57,6 +69,7 @@ export default function DesignEditorRoot({ productId }: DesignEditorRootProps) {
         {/* Invisible components */}
         <TextEditor />
         <ImageUploader />
+        <PreviewModal open={previewOpen} onOpenChange={setPreviewOpen} />
       </div>
     </EditorErrorBoundary>
   )

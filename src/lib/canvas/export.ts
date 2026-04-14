@@ -1,0 +1,55 @@
+import type { Canvas } from "fabric"
+
+// Matches @tshirt/shared DESIGN_EXPORT — inlined to avoid runtime import
+const EXPORT_WIDTH = 3000
+
+/**
+ * Export canvas content as high-resolution PNG blob (3000x3000 @ 300 DPI).
+ * Excludes mockup background and overlay objects.
+ */
+export function exportToPng(canvas: Canvas): Blob {
+  const multiplier = EXPORT_WIDTH / canvas.getWidth()
+
+  const dataUrl = canvas.toDataURL({
+    format: "png",
+    quality: 1,
+    multiplier,
+    filter: (obj) =>
+      !(obj as unknown as { excludeFromExport?: boolean }).excludeFromExport,
+  })
+
+  return dataUrlToBlob(dataUrl)
+}
+
+/** Export canvas state as JSON string (for re-editing later). */
+export function exportToJson(canvas: Canvas): string {
+  const json = canvas.toObject([
+    "excludeFromExport",
+    "name",
+    "layerName",
+    "_isPrintOverlay",
+  ]) as Record<string, unknown>
+  // Strip background image (mockup) so it's not saved
+  delete json.backgroundImage
+  return JSON.stringify(json)
+}
+
+/** Restore canvas from previously exported JSON. */
+export async function loadFromJson(
+  canvas: Canvas,
+  json: string
+): Promise<void> {
+  await canvas.loadFromJSON(JSON.parse(json))
+  canvas.renderAll()
+}
+
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, base64] = dataUrl.split(",")
+  const mime = header.split(":")[1].split(";")[0]
+  const bytes = atob(base64)
+  const buffer = new Uint8Array(bytes.length)
+  for (let i = 0; i < bytes.length; i++) {
+    buffer[i] = bytes.charCodeAt(i)
+  }
+  return new Blob([buffer], { type: mime })
+}
