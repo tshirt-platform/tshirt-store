@@ -6,6 +6,9 @@ const sdk = vi.hoisted(() => ({
   payment: { initiatePaymentSession: vi.fn() },
 }))
 vi.mock("@/lib/medusa", () => ({ medusa: { store: sdk } }))
+vi.mock("@/lib/env", () => ({
+  env: { NEXT_PUBLIC_MEDUSA_URL: "http://api.test", NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: "pk_test" },
+}))
 
 const store = new Map<string, string>()
 vi.stubGlobal("window", {
@@ -15,6 +18,7 @@ vi.stubGlobal("window", {
   },
 })
 
+import { recallLookup } from "@/lib/orders/api"
 import {
   COD_PROVIDER_ID,
   listShippingChoices,
@@ -143,5 +147,10 @@ describe("remembered order", () => {
     rememberOrder(summarizeOrder(order, "", ""))
     expect(recallOrder("order_1")?.total).toBe(423000)
     expect(recallOrder("order_2")).toBeNull()
+  })
+
+  it("lets the customer open order tracking without typing the email again", () => {
+    rememberOrder(summarizeOrder(order, "", ""))
+    expect(recallLookup("order_1")).toBe("a@example.com")
   })
 })

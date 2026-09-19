@@ -1,4 +1,5 @@
 import { medusa } from "@/lib/medusa"
+import { rememberLookup } from "@/lib/orders/api"
 import type { CheckoutFormValues } from "./schema"
 
 /** Medusa's built-in manual provider: the order is placed and cash is collected on delivery */
@@ -155,6 +156,8 @@ export function rememberOrder(order: PlacedOrder): void {
   } catch {
     // the page then shows the order number alone
   }
+  // The customer who just ordered can open tracking without typing the email again
+  if (order.email) rememberLookup(order.id, order.email)
 }
 
 /** The stored order as text: a string is a stable snapshot for useSyncExternalStore, a parsed object is not */

@@ -106,7 +106,12 @@ export function CartItem({ line, busy, onQuantity, onRemove }: Props) {
         )}
       </div>
 
-      {design && <DesignLightbox title={line.title} designs={design.designs} open={zoom} onOpenChange={setZoom} />}
+      {design && <DesignLightbox
+          title={line.title}
+          images={design.designs.map((d) => ({ side: d.side, url: previewOf(d) }))}
+          open={zoom}
+          onOpenChange={setZoom}
+        />}
     </li>
   )
 }
