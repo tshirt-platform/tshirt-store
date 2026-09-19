@@ -4,10 +4,12 @@ import { useEffect } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { CartItem } from "@/components/cart/CartItem"
+import { CartSkeleton } from "@/components/cart/CartSkeleton"
 import { EmptyCart } from "@/components/cart/EmptyCart"
 import { OrderSummary } from "@/components/cart/OrderSummary"
 import { useCartStore, selectItems, selectCount } from "@/lib/cart/cart.store"
 import { cartSubtotal } from "@/lib/cart/line-item"
+import { friendlyError } from "@/lib/errors"
 
 export default function CartPage() {
   const status = useCartStore((s) => s.status)
@@ -22,16 +24,14 @@ export default function CartPage() {
   }, [])
 
   const run = (task: Promise<void>) => task.catch((e: unknown) =>
-    toast.error(e instanceof Error ? e.message : "Không cập nhật được giỏ hàng")
+    toast.error(friendlyError(e, "Không cập nhật được giỏ hàng"))
   )
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold">Giỏ hàng</h1>
 
-      {(status === "idle" || status === "loading") && items.length === 0 && (
-        <p className="text-muted-foreground py-20 text-center text-sm">Đang tải giỏ hàng…</p>
-      )}
+      {(status === "idle" || status === "loading") && items.length === 0 && <CartSkeleton />}
 
       {status === "error" && (
         <div className="flex flex-col items-center gap-3 py-20 text-center">

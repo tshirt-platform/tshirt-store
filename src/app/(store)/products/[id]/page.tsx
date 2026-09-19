@@ -4,6 +4,7 @@ import { medusa } from "@/lib/medusa"
 import { ImageGallery } from "@/components/product/ImageGallery"
 import { VariantSelector } from "@/components/product/VariantSelector"
 import { parsePrintConfig } from "@tshirt-platform/shared"
+import { productJsonLd, serializeJsonLd } from "@/lib/seo"
 
 type ProductImage = { url: string }
 type OptionValue = { value: string }
@@ -51,9 +52,19 @@ export async function generateMetadata(props: {
   const { id } = await props.params
   const product = await getProduct(id)
   if (!product) return { title: "Sản phẩm không tìm thấy" }
+  const description = product.description ?? `Thiết kế ${product.title} theo ý bạn với editor trực tuyến.`
+  const image = product.thumbnail ?? product.images?.[0]?.url
   return {
     title: product.title,
-    description: product.description ?? undefined,
+    description,
+    alternates: { canonical: `/products/${product.id}` },
+    openGraph: {
+      title: product.title,
+      description,
+      type: "website",
+      url: `/products/${product.id}`,
+      ...(image ? { images: [{ url: image, alt: product.title }] } : {}),
+    },
   }
 }
 
@@ -76,6 +87,10 @@ export default async function ProductDetailPage(props: {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(productJsonLd(product)) }}
+      />
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         {/* Left: images */}
         <ImageGallery images={images} />

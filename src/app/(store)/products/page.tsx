@@ -7,6 +7,11 @@ import { ProductFilter } from "@/components/product/ProductFilter"
 export const metadata: Metadata = {
   title: "Sản phẩm",
   description: "Khám phá bộ sưu tập áo thun, polo, hoodie custom design.",
+  alternates: { canonical: "/products" },
+  openGraph: {
+    title: "Sản phẩm | TShirt Custom",
+    description: "Khám phá bộ sưu tập áo thun, polo, hoodie custom design.",
+  },
 }
 
 type ProductOption = {

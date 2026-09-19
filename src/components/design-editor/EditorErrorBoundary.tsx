@@ -18,6 +18,11 @@ export class EditorErrorBoundary extends Component<Props, State> {
     return { hasError: true, error }
   }
 
+  componentDidCatch(error: Error, info: { componentStack?: string | null }) {
+    // An error-tracking service can hook in here later
+    console.error("[editor error]", error, info.componentStack)
+  }
+
   render() {
     if (this.state.hasError) {
       return (
@@ -32,7 +37,7 @@ export class EditorErrorBoundary extends Component<Props, State> {
             onClick={() => window.location.reload()}
             className="rounded-lg bg-studio-charcoal px-4 py-2 text-sm text-white"
           >
-            Tải lại trang
+            Tải lại editor
           </button>
         </div>
       )
