@@ -59,8 +59,10 @@ export function VariantSelector({
   }, [selectedColor, selectedSize, variants, colorOption, sizeOption])
 
   const price = selectedVariant?.calculated_price?.calculated_amount
-    ?? variants[0]?.calculated_price?.calculated_amount
-    ?? 0
+    ?? variants.find((v) => v.calculated_price?.calculated_amount != null)?.calculated_price?.calculated_amount
+    ?? null
+  // A chosen variant without a price cannot be added to a cart
+  const unpriced = selectedVariant != null && selectedVariant.calculated_price?.calculated_amount == null
 
   function handleDesign() {
     if (!selectedColor || !selectedSize) {
@@ -69,6 +71,10 @@ export function VariantSelector({
     }
     if (!selectedVariant) {
       setError("Không tìm thấy phiên bản phù hợp")
+      return
+    }
+    if (unpriced) {
+      setError("Phiên bản này chưa có giá, tạm thời chưa bán")
       return
     }
     const params = new URLSearchParams({
@@ -83,7 +89,9 @@ export function VariantSelector({
   return (
     <div className="space-y-6">
       {/* Price */}
-      <div className="text-2xl font-bold">{formatVND(price)}</div>
+      <div className="text-2xl font-bold">
+        {price === null ? "Chưa có giá" : formatVND(price)}
+      </div>
 
       {/* Color picker */}
       {colorOption && (
@@ -176,7 +184,7 @@ export function VariantSelector({
       )}
 
       {/* CTA */}
-      <Button onClick={handleDesign} size="lg" className="w-full">
+      <Button onClick={handleDesign} size="lg" className="w-full" disabled={unpriced || price === null}>
         Bắt đầu thiết kế
       </Button>
     </div>

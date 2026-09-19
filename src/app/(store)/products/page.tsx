@@ -53,7 +53,8 @@ async function getProducts(type?: string) {
   }
 
   const { products } = await medusa.store.product.list(query)
-  return products as Product[]
+  // A product with no priced variant cannot be sold, so it stays off the storefront
+  return (products as Product[]).filter((p) => pricedAmount(p) !== null)
 }
 
 function extractColors(product: Product): string[] {
@@ -63,9 +64,9 @@ function extractColors(product: Product): string[] {
   return colorOption?.values?.map((v) => v.value) ?? []
 }
 
-function getPrice(product: Product): number {
-  const variant = product.variants?.[0]
-  return variant?.calculated_price?.calculated_amount ?? 0
+function pricedAmount(product: Product): number | null {
+  const variant = product.variants?.find((v) => v.calculated_price?.calculated_amount != null)
+  return variant?.calculated_price?.calculated_amount ?? null
 }
 
 function getTag(product: Product): string | null {
@@ -105,7 +106,7 @@ export default async function ProductsPage(props: {
               id={product.id}
               title={product.title}
               thumbnail={product.thumbnail}
-              price={getPrice(product)}
+              price={pricedAmount(product) ?? 0}
               colors={extractColors(product)}
               tag={getTag(product)}
             />
