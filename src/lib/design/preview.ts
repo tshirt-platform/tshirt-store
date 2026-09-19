@@ -6,6 +6,7 @@ export interface PreviewRequest {
   garmentHex: string
   /** Render-service template for this side; without one the caller uses the flat fallback */
   templateId: string
+  signal?: AbortSignal
 }
 
 /** Server-rendered preview on a garment photo, or null when the renderer cannot serve it */
@@ -16,7 +17,11 @@ export async function requestPreview(req: PreviewRequest): Promise<Blob | null> 
   form.set("garmentHex", req.garmentHex)
   form.set("side", req.side)
 
-  const res = await fetch("/api/preview", { method: "POST", body: form })
-  if (!res.ok) return null
-  return res.blob()
+  try {
+    const res = await fetch("/api/preview", { method: "POST", body: form, signal: req.signal })
+    return res.ok ? await res.blob() : null
+  } catch {
+    // aborted or unreachable: the caller falls back to another preview
+    return null
+  }
 }

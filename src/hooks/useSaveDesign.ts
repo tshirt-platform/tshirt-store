@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { DesignSide } from "@tshirt-platform/shared"
@@ -8,48 +8,31 @@ import { useCartStore } from "@/lib/cart/cart.store"
 import { useDesignStore } from "@/lib/store/design.store"
 import { renderFlatPreview } from "@/lib/design/flat-preview"
 import { requestPreview } from "@/lib/design/preview"
-import { buildCartMetadata, exportSides, type SideExport, type UploadedSide } from "@/lib/design/save"
+import { buildCartMetadata, exportSides, type UploadedSide } from "@/lib/design/save"
 import { newDesignId, uploadDesignFile } from "@/lib/design/upload"
 import { friendlyError } from "@/lib/errors"
 import { layoutForGarment } from "@/lib/print/garment"
 
-export type SavePhase = "idle" | "preparing" | "review" | "uploading" | "error"
-
-export interface SidePreview extends SideExport {
-  previewBlob: Blob
-  previewUrl: string
-  /** "photo" came from the garment photo renderer, "flat" is the drawing fallback */
-  source: "photo" | "flat"
-}
-
+/**
+ * Exports every side at print size, uploads it and puts the design in the cart. The customer has
+ * already been looking at the preview panel, so there is no confirmation step in between.
+ */
 export function useSaveDesign() {
   const router = useRouter()
-  const [phase, setPhase] = useState<SavePhase>("idle")
-  const [previews, setPreviews] = useState<SidePreview[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const urls = useRef<string[]>([])
+  const [working, setWorking] = useState(false)
 
-  const releaseUrls = useCallback(() => {
-    urls.current.forEach((u) => URL.revokeObjectURL(u))
-    urls.current = []
-  }, [])
-
-  useEffect(() => releaseUrls, [releaseUrls])
-
-  const close = useCallback(() => {
-    releaseUrls()
-    setPreviews([])
-    setError(null)
-    setPhase("idle")
-  }, [releaseUrls])
-
-  const start = useCallback(async () => {
+  const save = useCallback(async () => {
     const state = useDesignStore.getState()
     const { canvas, garment } = state
     if (!canvas || !garment) return
 
-    setPhase("preparing")
-    setError(null)
+    const editing = garment.editLineItemId !== null
+    if (!garment.size || (!garment.variantId && !editing)) {
+      toast.error("Chưa chọn màu và size. Hãy quay lại trang sản phẩm để chọn trước khi thêm vào giỏ hàng.")
+      return
+    }
+
+    setWorking(true)
     try {
       state.commitSide()
       const s = useDesignStore.getState()
@@ -64,10 +47,8 @@ export function useSaveDesign() {
       )
       if (sides.length === 0) {
         toast.error("Thiết kế đang trống. Hãy thêm chữ hoặc hình ảnh trước khi lưu.")
-        setPhase("idle")
         return
       }
-
       if (sides.some((x) => x.outOfBounds > 0)) {
         toast.warning("Có phần thiết kế nằm ngoài vùng in và sẽ bị cắt khi in")
       }
@@ -75,73 +56,48 @@ export function useSaveDesign() {
         toast.warning("Có ảnh độ phân giải thấp, bản in có thể bị mờ")
       }
 
-      releaseUrls()
-      const built: SidePreview[] = []
-      for (const side of sides) {
-        const templateId = garment.config.mockups?.[side.side]
-        const photo = templateId
-          ? await requestPreview({
-              artwork: side.png,
-              side: side.side,
-              garmentHex: garment.color.hex,
-              templateId,
-            })
-          : null
-        const previewBlob =
-          photo ?? (await renderFlatPreview(layoutForGarment(garment, side.side), garment.color, side.png))
-        const previewUrl = URL.createObjectURL(previewBlob)
-        urls.current.push(previewUrl)
-        built.push({ ...side, previewBlob, previewUrl, source: photo ? "photo" : "flat" })
-      }
-      setPreviews(built)
-      setPhase("review")
-    } catch (e) {
-      setError(friendlyError(e, "Không thể tạo bản xem trước"))
-      setPhase("error")
-    }
-  }, [releaseUrls])
-
-  const confirm = useCallback(async () => {
-    const { garment, setSavedDesign } = useDesignStore.getState()
-    if (!garment) return
-
-    setPhase("uploading")
-    setError(null)
-    try {
       const designId = newDesignId()
       const uploaded: UploadedSide[] = []
-      for (const p of previews) {
-        const ref = { designId, side: p.side as DesignSide }
+      for (const side of sides) {
+        // The first photo of the side stands for the design in the cart and on the work order
+        const templateId = garment.config.mockups?.[side.side]?.[0]
+        const photo = templateId
+          ? await requestPreview({ artwork: side.png, side: side.side, garmentHex: garment.color.hex, templateId })
+          : null
+        const preview =
+          photo ?? (await renderFlatPreview(layoutForGarment(garment, side.side), garment.color, side.png))
+
+        const ref = { designId, side: side.side as DesignSide }
         const [pngUrl, jsonUrl, previewUrl] = await Promise.all([
-          uploadDesignFile(p.png, { ...ref, kind: "png" }),
-          uploadDesignFile(new Blob([p.json], { type: "application/json" }), { ...ref, kind: "json" }),
-          uploadDesignFile(p.previewBlob, { ...ref, kind: "jpg" }),
+          uploadDesignFile(side.png, { ...ref, kind: "png" }),
+          uploadDesignFile(new Blob([side.json], { type: "application/json" }), { ...ref, kind: "json" }),
+          uploadDesignFile(preview, { ...ref, kind: "jpg" }),
         ])
-        uploaded.push({ side: p.side, pngUrl, jsonUrl, previewUrl })
+        uploaded.push({ side: side.side, pngUrl, jsonUrl, previewUrl })
       }
+
       const metadata = buildCartMetadata(garment, uploaded)
-      setSavedDesign(metadata)
+      useDesignStore.getState().setSavedDesign(metadata)
 
       const cart = useCartStore.getState()
       if (garment.editLineItemId) {
         await cart.replaceDesign(garment.editLineItemId, metadata as unknown as Record<string, unknown>)
         toast.success("Đã cập nhật thiết kế trong giỏ hàng")
       } else {
-        if (!garment.variantId) throw new Error("Chưa chọn màu và size")
         await cart.addDesign({
-          variantId: garment.variantId,
+          variantId: garment.variantId as string,
           quantity: garment.quantity,
           metadata: metadata as unknown as Record<string, unknown>,
         })
         toast.success("Đã thêm vào giỏ hàng")
       }
-      close()
       router.push("/cart")
     } catch (e) {
-      setError(friendlyError(e, "Không thể lưu thiết kế"))
-      setPhase("error")
+      toast.error(friendlyError(e, "Không thể lưu thiết kế"))
+    } finally {
+      setWorking(false)
     }
-  }, [previews, close, router])
+  }, [router])
 
-  return { phase, previews, error, start, confirm, close }
+  return { working, save }
 }

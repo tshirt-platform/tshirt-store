@@ -1,5 +1,5 @@
 import { Header } from "@/components/landing/Header"
-import { Footer } from "@/components/landing/Footer"
+import { FooterGate } from "@/components/landing/FooterGate"
 
 export default function StoreLayout({
   children,
@@ -10,7 +10,7 @@ export default function StoreLayout({
     <>
       <Header />
       <main className="flex-1">{children}</main>
-      <Footer />
+      <FooterGate />
     </>
   )
 }
