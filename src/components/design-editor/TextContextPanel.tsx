@@ -22,7 +22,6 @@ const FONTS = [
 
 export default function TextContextPanel() {
   const canvas = useDesignStore((s) => s.canvas)
-  const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
   const [selected, setSelected] = useState<IText | null>(null)
   const [fontFamily, setFontFamily] = useState("Inter")
   const [fontSize, setFontSize] = useState(64)
@@ -72,9 +71,10 @@ export default function TextContextPanel() {
       if (!selected || !canvas) return
       selected.set(props)
       canvas.renderAll()
-      saveSnapshot()
+      // Listeners (undo snapshot, contrast warning, layer list) react to this event
+      canvas.fire("object:modified", { target: selected })
     },
-    [selected, canvas, saveSnapshot]
+    [selected, canvas]
   )
 
   if (!selected) return null
