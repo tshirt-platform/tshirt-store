@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import type { GarmentContext } from "@/lib/print/garment"
 
 const DesignEditorRoot = dynamic(
   () => import("@/components/design-editor/DesignEditorRoot"),
@@ -17,9 +18,9 @@ const DesignEditorRoot = dynamic(
 )
 
 interface DesignEditorLoaderProps {
-  productId: string
+  garment: GarmentContext
 }
 
-export function DesignEditorLoader({ productId }: DesignEditorLoaderProps) {
-  return <DesignEditorRoot productId={productId} />
+export function DesignEditorLoader({ garment }: DesignEditorLoaderProps) {
+  return <DesignEditorRoot garment={garment} />
 }

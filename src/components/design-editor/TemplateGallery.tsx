@@ -1,10 +1,10 @@
 "use client"
 
 import Image from "next/image"
-import type { FabricObject } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
 import { TEMPLATES } from "@/lib/canvas/templates"
-import { getPrintArea, applyPrintClip } from "@/lib/canvas/constraints"
+import { applyPrintClip, isUserObject } from "@/lib/canvas/constraints"
+import { initialImageScale } from "@/lib/print/editor-layout"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 
 interface TemplateGalleryProps {
@@ -17,21 +17,13 @@ export default function TemplateGallery({
   onOpenChange,
 }: TemplateGalleryProps) {
   const canvas = useDesignStore((s) => s.canvas)
-  const side = useDesignStore((s) => s.side)
+  const layout = useDesignStore((s) => s.layout)
   const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
 
   async function loadTemplate(src: string) {
-    if (!canvas) return
+    if (!canvas || !layout) return
 
-    const hasObjects = canvas
-      .getObjects()
-      .some(
-        (o) =>
-          !(o as FabricObject & { excludeFromExport?: boolean })
-            .excludeFromExport &&
-          !(o as FabricObject & { _isMockup?: boolean })._isMockup &&
-          !(o as FabricObject & { _isPrintOverlay?: boolean })._isPrintOverlay
-      )
+    const hasObjects = canvas.getObjects().some(isUserObject)
 
     if (hasObjects) {
       const ok = window.confirm(
@@ -40,41 +32,27 @@ export default function TemplateGallery({
       if (!ok) return
     }
 
-    // Remove user objects, keep mockup + overlay
-    const toRemove = canvas.getObjects().filter(
-      (o) =>
-        !(o as FabricObject & { excludeFromExport?: boolean })
-          .excludeFromExport &&
-        !(o as FabricObject & { _isMockup?: boolean })._isMockup &&
-        !(o as FabricObject & { _isPrintOverlay?: boolean })._isPrintOverlay
-    )
-    toRemove.forEach((o) => canvas.remove(o))
+    // Remove user objects, keep the print-area frame
+    canvas.getObjects().filter(isUserObject).forEach((o) => canvas.remove(o))
 
     // Load template image
     const fabric = await import("fabric")
     const img = await fabric.FabricImage.fromURL(src)
-    const printArea = getPrintArea(side)
 
     const imgW = img.width ?? 1
     const imgH = img.height ?? 1
-    const scale = Math.min(
-      printArea.width / imgW,
-      printArea.height / imgH,
-      1
-    )
-    const scaledW = imgW * scale
-    const scaledH = imgH * scale
+    const scale = initialImageScale(imgW, imgH, layout)
 
     img.set({
       scaleX: scale,
       scaleY: scale,
-      left: printArea.x + (printArea.width - scaledW) / 2,
-      top: printArea.y + (printArea.height - scaledH) / 2,
+      left: (layout.width - imgW * scale) / 2,
+      top: (layout.height - imgH * scale) / 2,
       originX: "left",
       originY: "top",
     })
 
-    await applyPrintClip(img, side)
+    await applyPrintClip(img, layout)
     canvas.add(img)
     canvas.setActiveObject(img)
     canvas.renderAll()

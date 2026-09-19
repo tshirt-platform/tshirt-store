@@ -25,7 +25,7 @@ export default function TextContextPanel() {
   const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
   const [selected, setSelected] = useState<IText | null>(null)
   const [fontFamily, setFontFamily] = useState("Inter")
-  const [fontSize, setFontSize] = useState(32)
+  const [fontSize, setFontSize] = useState(64)
   const [fill, setFill] = useState("#1a1a1a")
   const [isBold, setIsBold] = useState(false)
   const [isItalic, setIsItalic] = useState(false)
@@ -34,7 +34,7 @@ export default function TextContextPanel() {
 
   const syncFromObject = useCallback((obj: IText) => {
     setFontFamily(obj.fontFamily ?? "Inter")
-    setFontSize(obj.fontSize ?? 32)
+    setFontSize(obj.fontSize ?? 64)
     setFill((obj.fill as string) ?? "#1a1a1a")
     setIsBold(obj.fontWeight === "bold")
     setIsItalic(obj.fontStyle === "italic")
@@ -100,7 +100,7 @@ export default function TextContextPanel() {
         type="number"
         value={fontSize}
         min={8}
-        max={200}
+        max={400}
         onChange={(e) => {
           const v = Number(e.target.value)
           setFontSize(v)

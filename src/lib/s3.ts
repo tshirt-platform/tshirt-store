@@ -24,7 +24,7 @@ function getS3Client(): S3Client {
 export function getDesignKey(
   id: string,
   side: "front" | "back",
-  ext: "png" | "json"
+  ext: "png" | "json" | "jpg"
 ): string {
   return `${env.S3_DESIGNS_PREFIX}${id}/${side}.${ext}`
 }

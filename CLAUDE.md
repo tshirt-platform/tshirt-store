@@ -198,6 +198,6 @@ export default function Page({ params }: { params: { id: string } }) {}
 12. Wrap design editor in `<ErrorBoundary>`
 
 ## Cross-Repo Dependencies
-- `@tshirt/shared` — shared TypeScript types (DesignState, PrintShopWebhookPayload, constants)
+- `@tshirt-platform/shared` — shared TypeScript types (DesignState, PrintShopWebhookPayload, constants)
 - `tshirt-backend` — Medusa.js v2 API at `NEXT_PUBLIC_MEDUSA_URL`
 - Communication via Medusa JS SDK (`@medusajs/js-sdk`)

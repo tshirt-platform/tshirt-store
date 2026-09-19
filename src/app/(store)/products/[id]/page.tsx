@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { medusa } from "@/lib/medusa"
 import { ImageGallery } from "@/components/product/ImageGallery"
 import { VariantSelector } from "@/components/product/VariantSelector"
+import { parsePrintConfig } from "@tshirt-platform/shared"
 
 type ProductImage = { url: string }
 type OptionValue = { value: string }
@@ -22,6 +23,7 @@ type Product = {
   images?: ProductImage[] | null
   options?: ProductOption[] | null
   variants?: Variant[] | null
+  metadata?: Record<string, unknown> | null
 }
 
 async function getRegionId(): Promise<string> {
@@ -65,6 +67,8 @@ export default async function ProductDetailPage(props: {
     notFound()
   }
 
+  const printConfig = parsePrintConfig(product.metadata?.print_config)
+
   const images = [
     ...(product.thumbnail ? [{ url: product.thumbnail, alt: product.title }] : []),
     ...(product.images?.map((img) => ({ url: img.url, alt: product.title })) ?? []),
@@ -88,6 +92,8 @@ export default async function ProductDetailPage(props: {
               productId={product.id}
               options={product.options ?? []}
               variants={product.variants ?? []}
+              colors={printConfig?.colors}
+              sizeChart={printConfig?.size_chart}
             />
           </div>
         </div>

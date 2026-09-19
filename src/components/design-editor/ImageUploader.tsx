@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useCallback } from "react"
 import { useDesignStore } from "@/lib/store/design.store"
-import { getPrintArea, scaleForDpi } from "@/lib/canvas/constraints"
+import { dpiLevel } from "@/lib/canvas/constraints"
+import { effectiveDpi, initialImageScale } from "@/lib/print/editor-layout"
+import { DESIGN_EXPORT } from "@tshirt-platform/shared"
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/svg+xml"]
@@ -14,11 +16,11 @@ export default function ImageUploader() {
   const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
   const setActiveTool = useDesignStore((s) => s.setActiveTool)
 
-  const side = useDesignStore((s) => s.side)
+  const layout = useDesignStore((s) => s.layout)
 
   const addImage = useCallback(
     async (file: File) => {
-      if (!canvas) return
+      if (!canvas || !layout) return
 
       if (!ACCEPTED_TYPES.includes(file.type)) {
         alert("Chỉ hỗ trợ file JPG, PNG, SVG")
@@ -32,19 +34,31 @@ export default function ImageUploader() {
       const fabric = await import("fabric")
       const url = URL.createObjectURL(file)
       const img = await fabric.FabricImage.fromURL(url)
-      const printArea = getPrintArea(side)
 
       const imgW = img.width ?? 1
       const imgH = img.height ?? 1
-      // Scale to best DPI (at least 300) while fitting print area
-      const scale = scaleForDpi(imgW, imgH, side)
-      const scaledW = imgW * scale
-      const scaledH = imgH * scale
+      const scale = initialImageScale(imgW, imgH, layout)
+
+      // Vectors have no resolution to warn about
+      if (file.type !== "image/svg+xml") {
+        const dpi = effectiveDpi(scale, layout, DESIGN_EXPORT.DPI)
+        if (dpiLevel(dpi) === "low") {
+          const ok = window.confirm(
+            `Ảnh này chỉ đạt khoảng ${Math.round(dpi)} DPI khi in (khuyến nghị ≥ 300). ` +
+              "In ra có thể bị mờ. Vẫn thêm vào thiết kế?"
+          )
+          if (!ok) {
+            URL.revokeObjectURL(url)
+            return
+          }
+        }
+      }
+
       img.set({
         scaleX: scale,
         scaleY: scale,
-        left: printArea.x + (printArea.width - scaledW) / 2,
-        top: printArea.y + (printArea.height - scaledH) / 2,
+        left: (layout.width - imgW * scale) / 2,
+        top: (layout.height - imgH * scale) / 2,
         originX: "left",
         originY: "top",
       })
@@ -55,7 +69,7 @@ export default function ImageUploader() {
       saveSnapshot()
       setActiveTool("select")
     },
-    [canvas, saveSnapshot, setActiveTool, side]
+    [canvas, saveSnapshot, setActiveTool, layout]
   )
 
   // Open file dialog when image tool is activated

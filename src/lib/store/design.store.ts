@@ -1,17 +1,17 @@
 import { create } from "zustand"
-import type { ActiveTool, DesignSide } from "@tshirt/shared"
+import type { ActiveTool, CartLineItemMetadata, DesignSide, GarmentColor } from "@tshirt-platform/shared"
 import type { Canvas } from "fabric"
-import { loadMockup } from "@/lib/canvas/mockup"
-import {
-  drawPrintAreaOverlay,
-  removePrintAreaOverlay,
-  applyPrintClipAll,
-} from "@/lib/canvas/constraints"
+import { removePrintAreaOverlay } from "@/lib/canvas/constraints"
+import { applyScene, restoreCanvas, serializeCanvas } from "@/lib/canvas/scene"
+import type { EditorLayout } from "@/lib/print/editor-layout"
+import { layoutForGarment, type GarmentContext } from "@/lib/print/garment"
 
 const MAX_HISTORY = 30
 
 interface DesignStoreState {
   canvas: Canvas | null
+  garment: GarmentContext | null
+  layout: EditorLayout | null
   productId: string | null
   variantId: string | null
   side: DesignSide
@@ -22,11 +22,18 @@ interface DesignStoreState {
   backJson: string | null
   pngUrl: string | null
   jsonUrl: string | null
+  /** Set once the customer confirms a design; feeds the cart line item */
+  savedDesign: CartLineItemMetadata | null
+  setSavedDesign: (design: CartLineItemMetadata | null) => void
   setCanvas: (canvas: Canvas | null) => void
+  setGarment: (garment: GarmentContext) => void
+  setColor: (color: GarmentColor) => void
   setProductId: (id: string) => void
   setVariantId: (id: string | null) => void
   setActiveTool: (tool: ActiveTool) => void
   setSide: (side: DesignSide) => void
+  /** Stores the current side's objects so both sides can be exported together */
+  commitSide: () => void
   saveSnapshot: () => void
   undo: () => void
   redo: () => void
@@ -36,6 +43,8 @@ interface DesignStoreState {
 
 export const useDesignStore = create<DesignStoreState>((set, get) => ({
   canvas: null,
+  garment: null,
+  layout: null,
   productId: null,
   variantId: null,
   side: "front",
@@ -46,87 +55,88 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
   backJson: null,
   pngUrl: null,
   jsonUrl: null,
+  savedDesign: null,
+  setSavedDesign: (design) => set({ savedDesign: design }),
 
   setCanvas: (canvas) => set({ canvas }),
+
+  setGarment: (garment) =>
+    set({
+      garment,
+      layout: layoutForGarment(garment, "front"),
+      productId: garment.productId,
+      variantId: garment.variantId,
+      side: "front",
+      history: [],
+      historyIndex: -1,
+      frontJson: null,
+      backJson: null,
+      savedDesign: null,
+    }),
+
+  setColor: (color) => {
+    const { canvas, garment, layout } = get()
+    if (!garment) return
+    set({ garment: { ...garment, color } })
+    if (canvas && layout) void applyScene(canvas, layout, color)
+  },
+
   setProductId: (id) => set({ productId: id }),
   setVariantId: (id) => set({ variantId: id }),
   setActiveTool: (tool) => set({ activeTool: tool }),
 
-  setSide: (newSide) => {
+  commitSide: () => {
     const { canvas, side } = get()
-    if (!canvas || newSide === side) return
-
-    // Strip overlay before saving (so it's not duplicated on restore)
+    if (!canvas) return
     removePrintAreaOverlay(canvas)
+    const json = serializeCanvas(canvas)
+    set(side === "front" ? { frontJson: json } : { backJson: json })
+  },
 
-    // Save user objects only (no backgroundImage)
-    const json = canvas.toJSON() as Record<string, unknown>
-    delete json.backgroundImage
-    const currentJson = JSON.stringify(json)
+  setSide: (newSide) => {
+    const { canvas, side, garment } = get()
+    if (!canvas || !garment || newSide === side) return
 
-    const update =
-      side === "front"
-        ? { frontJson: currentJson }
-        : { backJson: currentJson }
+    get().commitSide()
+    const target = newSide === "front" ? get().frontJson : get().backJson
+    const layout = layoutForGarment(garment, newSide)
 
-    // Load target side
-    const targetJson =
-      newSide === "front" ? get().frontJson : get().backJson
+    canvas.getObjects().slice().forEach((obj) => canvas.remove(obj))
+    set({ side: newSide, layout, history: [], historyIndex: -1 })
 
-    // Clear canvas, reload mockup + overlay + user objects
-    const objects = canvas.getObjects().slice()
-    objects.forEach((obj) => canvas.remove(obj))
-
-    loadMockup(canvas, newSide).then(async () => {
-      if (targetJson) {
-        const parsed = JSON.parse(targetJson)
-        await canvas.loadFromJSON(parsed)
-        await loadMockup(canvas, newSide)
-      }
-      await drawPrintAreaOverlay(canvas, newSide)
-      // Re-apply clip paths for the new side's print area
-      await applyPrintClipAll(canvas, newSide)
-      canvas.renderAll()
-    })
-
-    set({ ...update, side: newSide, history: [], historyIndex: -1 })
+    const ready = target
+      ? restoreCanvas(canvas, target, layout, garment.color)
+      : applyScene(canvas, layout, garment.color)
+    void ready.then(() => get().saveSnapshot())
   },
 
   saveSnapshot: () => {
     const { canvas, history, historyIndex } = get()
     if (!canvas) return
 
-    const json = JSON.stringify(canvas.toJSON())
     const newHistory = history.slice(0, historyIndex + 1)
-    newHistory.push(json)
-
-    if (newHistory.length > MAX_HISTORY) {
-      newHistory.shift()
-    }
+    newHistory.push(serializeCanvas(canvas))
+    if (newHistory.length > MAX_HISTORY) newHistory.shift()
 
     set({ history: newHistory, historyIndex: newHistory.length - 1 })
   },
 
   undo: () => {
-    const { canvas, history, historyIndex } = get()
-    if (!canvas || historyIndex <= 0) return
+    const { canvas, history, historyIndex, layout, garment } = get()
+    if (!canvas || !layout || !garment || historyIndex <= 0) return
 
     const newIndex = historyIndex - 1
-    canvas.loadFromJSON(JSON.parse(history[newIndex])).then(() => {
-      canvas.renderAll()
-    })
     set({ historyIndex: newIndex })
+    void restoreCanvas(canvas, history[newIndex], layout, garment.color)
   },
 
   redo: () => {
-    const { canvas, history, historyIndex } = get()
-    if (!canvas || historyIndex >= history.length - 1) return
+    const { canvas, history, historyIndex, layout, garment } = get()
+    if (!canvas || !layout || !garment || historyIndex >= history.length - 1) return
 
     const newIndex = historyIndex + 1
-    canvas.loadFromJSON(JSON.parse(history[newIndex])).then(() => {
-      canvas.renderAll()
-    })
     set({ historyIndex: newIndex })
+    void restoreCanvas(canvas, history[newIndex], layout, garment.color)
   },
 
   setPngUrl: (url) => set({ pngUrl: url }),
