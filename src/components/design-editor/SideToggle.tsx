@@ -3,7 +3,7 @@
 import { useDesignStore } from "@/lib/store/design.store"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { DesignSide } from "@tshirt/shared"
+import type { DesignSide } from "@tshirt-platform/shared"
 
 const SIDES: { value: DesignSide; label: string }[] = [
   { value: "front", label: "Mặt trước" },

@@ -3,17 +3,21 @@
 import { useEffect, useRef, useCallback } from "react"
 import type { Canvas, FabricObject } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
-import {
-  CANVAS_SIZE,
-  drawPrintAreaOverlay,
-  applyPrintClip,
-} from "@/lib/canvas/constraints"
-import { loadMockup } from "@/lib/canvas/mockup"
+import { applyPrintClip, isUserObject } from "@/lib/canvas/constraints"
+import { applyScene, fitViewport } from "@/lib/canvas/scene"
+
+const MIN_SIZE = 240
+
+function measure(el: HTMLElement) {
+  return {
+    width: Math.max(MIN_SIZE, Math.floor(el.clientWidth)),
+    height: Math.max(MIN_SIZE, Math.floor(el.clientHeight)),
+  }
+}
 
 export default function DesignCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const initializedRef = useRef(false)
   const setCanvas = useDesignStore((s) => s.setCanvas)
   const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
   const activeTool = useDesignStore((s) => s.activeTool)
@@ -29,60 +33,68 @@ export default function DesignCanvas() {
 
   useEffect(() => {
     let fabricCanvas: Canvas | null = null
+    let observer: ResizeObserver | null = null
+    // StrictMode mounts, unmounts and mounts again; each run owns its own flag
+    let cancelled = false
 
     async function init() {
       const fabric = await import("fabric")
-      if (!canvasRef.current || initializedRef.current) return
-      initializedRef.current = true
+      const { layout, garment } = useDesignStore.getState()
+      const container = containerRef.current
+      if (cancelled || !canvasRef.current || !container || !layout || !garment) return
 
-      fabricCanvas = new fabric.Canvas(canvasRef.current, {
-        width: CANVAS_SIZE.width,
-        height: CANVAS_SIZE.height,
+      const canvas = new fabric.Canvas(canvasRef.current, {
+        ...measure(container),
         backgroundColor: "transparent",
         selection: true,
         preserveObjectStacking: true,
       })
+      fabricCanvas = canvas
 
-      // Load t-shirt mockup as background (always starts on "front")
-      await loadMockup(fabricCanvas, "front")
-      await drawPrintAreaOverlay(fabricCanvas, "front")
+      await applyScene(canvas, layout, garment.color)
+      if (cancelled) return
 
-      setCanvas(fabricCanvas)
+      setCanvas(canvas)
       saveSnapshot()
 
-      // Auto-apply clipPath to new user objects
-      fabricCanvas.on("object:added", (e: { target: FabricObject }) => {
-        const obj = e.target
-        const isOverlay = (obj as FabricObject & { _isPrintOverlay?: boolean })
-          ._isPrintOverlay
-        const isExcluded = (
-          obj as FabricObject & { excludeFromExport?: boolean }
-        ).excludeFromExport
-        if (!isOverlay && !isExcluded && !obj.clipPath) {
-          const side = useDesignStore.getState().side
-          applyPrintClip(obj, side)
+      // Auto-clip user objects to the print area
+      canvas.on("object:added", (e: { target: FabricObject }) => {
+        const current = useDesignStore.getState().layout
+        if (current && isUserObject(e.target) && !e.target.clipPath) {
+          void applyPrintClip(e.target, current)
         }
       })
 
-      // Save snapshot after modifications
-      fabricCanvas.on("object:modified", () => {
+      canvas.on("object:modified", () => {
         saveSnapshot()
       })
+
+      observer = new ResizeObserver(() => {
+        const current = useDesignStore.getState().layout
+        if (!current) return
+        canvas.setDimensions(measure(container))
+        fitViewport(canvas, current)
+        canvas.requestRenderAll()
+      })
+      observer.observe(container)
     }
 
-    init()
+    init().catch((err: unknown) => {
+      // Building the scene on a canvas disposed mid-flight is expected in StrictMode
+      if (!cancelled) throw err
+    })
 
-    // Drag & drop
     const container = containerRef.current
     const preventDefault = (e: DragEvent) => e.preventDefault()
     container?.addEventListener("dragover", preventDefault)
     container?.addEventListener("drop", handleDrop)
 
     return () => {
+      cancelled = true
+      observer?.disconnect()
       container?.removeEventListener("dragover", preventDefault)
       container?.removeEventListener("drop", handleDrop)
-      fabricCanvas?.dispose()
-      initializedRef.current = false
+      void fabricCanvas?.dispose()
       setCanvas(null)
     }
   }, [setCanvas, saveSnapshot, handleDrop])
@@ -90,7 +102,7 @@ export default function DesignCanvas() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-1 items-center justify-center"
+      className="absolute inset-0 flex items-center justify-center"
       data-tool={activeTool}
     >
       <canvas ref={canvasRef} />

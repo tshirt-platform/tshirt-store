@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 import type { FabricObject } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
+import { isUserObject } from "@/lib/canvas/constraints"
 import { Button } from "@/components/ui/button"
 import { Eye, EyeOff, Lock, Unlock, Trash2, GripVertical } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -41,15 +42,6 @@ function getLayerName(obj: FabricObject): string {
   // Fallback: capitalize type
   const type = obj.type ?? "object"
   return type.charAt(0).toUpperCase() + type.slice(1)
-}
-
-function isUserObject(obj: FabricObject): boolean {
-  return (
-    !(obj as FabricObject & { excludeFromExport?: boolean })
-      .excludeFromExport &&
-    !(obj as FabricObject & { _isMockup?: boolean })._isMockup &&
-    !(obj as FabricObject & { _isPrintOverlay?: boolean })._isPrintOverlay
-  )
 }
 
 export default function LayerPanel() {

@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useDesignStore } from "@/lib/store/design.store"
 import { cn } from "@/lib/utils"
-import type { ActiveTool } from "@tshirt/shared"
+import type { ActiveTool } from "@tshirt-platform/shared"
 import TemplateGallery from "./TemplateGallery"
 
 const TOOLS: { tool: ActiveTool; icon: typeof MousePointer2; label: string }[] = [

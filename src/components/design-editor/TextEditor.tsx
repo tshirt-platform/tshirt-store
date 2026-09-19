@@ -3,11 +3,11 @@
 import { useEffect, useCallback } from "react"
 import type { TPointerEventInfo } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
-import { getPrintArea } from "@/lib/canvas/constraints"
 
 const DEFAULT_FONT = "Inter"
-const DEFAULT_SIZE = 32
+const DEFAULT_SIZE = 64
 const DEFAULT_COLOR = "#1a1a1a"
+const EDGE_MARGIN = 20
 
 export default function TextEditor() {
   const canvas = useDesignStore((s) => s.canvas)
@@ -15,15 +15,14 @@ export default function TextEditor() {
   const saveSnapshot = useDesignStore((s) => s.saveSnapshot)
   const setActiveTool = useDesignStore((s) => s.setActiveTool)
 
-  const side = useDesignStore((s) => s.side)
+  const layout = useDesignStore((s) => s.layout)
 
   const handleCanvasClick = useCallback(
     async (opt: TPointerEventInfo) => {
-      if (activeTool !== "text" || !canvas) return
+      if (activeTool !== "text" || !canvas || !layout) return
 
       const fabric = await import("fabric")
-      const pointer = canvas.getViewportPoint(opt.e)
-      const printArea = getPrintArea(side)
+      const pointer = canvas.getScenePoint(opt.e)
 
       const text = new fabric.IText("Nhập văn bản", {
         left: pointer.x,
@@ -37,12 +36,12 @@ export default function TextEditor() {
 
       // Clamp inside print area
       const clampedLeft = Math.max(
-        printArea.x + 20,
-        Math.min(pointer.x, printArea.x + printArea.width - 20)
+        EDGE_MARGIN,
+        Math.min(pointer.x, layout.width - EDGE_MARGIN)
       )
       const clampedTop = Math.max(
-        printArea.y + 20,
-        Math.min(pointer.y, printArea.y + printArea.height - 20)
+        EDGE_MARGIN,
+        Math.min(pointer.y, layout.height - EDGE_MARGIN)
       )
       text.set({ left: clampedLeft, top: clampedTop })
 
@@ -52,7 +51,7 @@ export default function TextEditor() {
       saveSnapshot()
       setActiveTool("select")
     },
-    [canvas, activeTool, saveSnapshot, setActiveTool, side]
+    [canvas, activeTool, saveSnapshot, setActiveTool, layout]
   )
 
   useEffect(() => {

@@ -5,9 +5,9 @@ export type {
   ActiveTool,
   DesignState,
   CartLineItemMetadata,
-} from "@tshirt/shared"
+} from "@tshirt-platform/shared"
 
 export type {
   PrintShopWebhookPayload,
   PrintJobStatus,
-} from "@tshirt/shared"
+} from "@tshirt-platform/shared"

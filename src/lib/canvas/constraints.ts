@@ -1,183 +1,104 @@
 import type { Canvas, FabricObject } from "fabric"
-import type { DesignSide } from "@tshirt/shared"
+import type { EditorLayout } from "@/lib/print/editor-layout"
 
-export const CANVAS_SIZE = { width: 800, height: 800 } as const
-
-// Print area coordinates per side (matching t-shirt body proportions)
-export const PRINT_AREAS: Record<
-  DesignSide,
-  { x: number; y: number; width: number; height: number }
-> = {
-  front: { x: 224, y: 153, width: 352, height: 438 },
-  back: { x: 210, y: 140, width: 380, height: 480 },
-} as const
-
-// Default (front) for backward compat
-export const PRINT_AREA = PRINT_AREAS.front
-
-// Physical print width in inches (standard t-shirt front)
-export const PRINT_PHYSICAL_WIDTH_INCHES = 12
-export const TARGET_DPI = 300
-
-// Max canvas scale that maintains target DPI for a given image
-export function scaleForDpi(
-  imgWidth: number,
-  imgHeight: number,
-  side: DesignSide = "front",
-  dpi: number = TARGET_DPI
-): number {
-  const area = PRINT_AREAS[side]
-  // Max display scale so DPI >= target
-  const scaleDpi = area.width / (dpi * PRINT_PHYSICAL_WIDTH_INCHES)
-  // Fit within print area
-  const scaleFit = Math.min(area.width / imgWidth, area.height / imgHeight, 1)
-  return Math.min(scaleDpi, scaleFit)
+type Flagged = FabricObject & {
+  _isPrintOverlay?: boolean
+  excludeFromExport?: boolean
 }
 
-export function getPrintArea(side: DesignSide = "front") {
-  return PRINT_AREAS[side]
+export function isPrintOverlay(obj: object): boolean {
+  return (obj as Flagged)._isPrintOverlay === true
 }
 
-export function isWithinPrintArea(
-  obj: FabricObject,
-  side: DesignSide = "front"
-): boolean {
-  const area = PRINT_AREAS[side]
-  const bounds = obj.getBoundingRect()
+/** User content: everything except the print-area overlay and other export-excluded helpers */
+export function isUserObject(obj: object): boolean {
+  return !isPrintOverlay(obj) && !(obj as Flagged).excludeFromExport
+}
+
+export function isWithinPrintArea(obj: FabricObject, layout: EditorLayout): boolean {
+  const b = obj.getBoundingRect()
   return (
-    bounds.left >= area.x &&
-    bounds.top >= area.y &&
-    bounds.left + bounds.width <= area.x + area.width &&
-    bounds.top + bounds.height <= area.y + area.height
+    b.left >= 0 &&
+    b.top >= 0 &&
+    b.left + b.width <= layout.width &&
+    b.top + b.height <= layout.height
   )
 }
 
 export function validateAllObjects(
   canvas: Canvas,
-  side: DesignSide = "front"
-): {
-  valid: boolean
-  outOfBounds: FabricObject[]
-} {
-  const objects = canvas
+  layout: EditorLayout
+): { valid: boolean; outOfBounds: FabricObject[] } {
+  const outOfBounds = canvas
     .getObjects()
-    .filter(
-      (obj) =>
-        !(obj as FabricObject & { excludeFromExport?: boolean })
-          .excludeFromExport
-    )
-  const outOfBounds = objects.filter((obj) => !isWithinPrintArea(obj, side))
+    .filter(isUserObject)
+    .filter((obj) => !isWithinPrintArea(obj, layout))
   return { valid: outOfBounds.length === 0, outOfBounds }
 }
 
-// Helper: check if an object is a print overlay line
-function isOverlayLine(
-  obj: FabricObject
-): obj is FabricObject & { _isPrintOverlay: true } {
-  return (obj as FabricObject & { _isPrintOverlay?: boolean })
-    ._isPrintOverlay === true
+export function removePrintAreaOverlay(canvas: Canvas): void {
+  canvas.getObjects().filter(isPrintOverlay).forEach((obj) => canvas.remove(obj))
 }
 
-// Remove all overlay lines from canvas
-export function removePrintAreaOverlay(canvas: Canvas) {
-  const overlays = canvas.getObjects().filter(isOverlayLine)
-  overlays.forEach((obj) => canvas.remove(obj))
-}
-
-// Draw dashed rectangle overlay marking the print area
 export async function drawPrintAreaOverlay(
   canvas: Canvas,
-  side: DesignSide = "front"
-) {
+  layout: EditorLayout
+): Promise<void> {
   const fabric = await import("fabric")
-  const area = PRINT_AREAS[side]
-
-  // Remove existing overlay lines before drawing new ones
   removePrintAreaOverlay(canvas)
 
-  const lineProps = {
+  // Fabric 7 defaults to a centred origin, so the corner must be explicit
+  const frame = new fabric.Rect({
+    left: 0,
+    top: 0,
+    originX: "left",
+    originY: "top",
+    width: layout.width,
+    height: layout.height,
+    fill: "transparent",
     stroke: "#00aaff",
-    strokeWidth: 1,
-    strokeDashArray: [6, 4] as number[],
+    strokeWidth: 2,
+    strokeDashArray: [12, 8],
+    strokeUniform: true,
     selectable: false,
     evented: false,
     excludeFromExport: true,
     objectCaching: false,
+  })
+  ;(frame as Flagged)._isPrintOverlay = true
+  canvas.add(frame)
+  canvas.sendObjectToBack(frame)
+}
+
+async function printClip(layout: EditorLayout) {
+  const fabric = await import("fabric")
+  return new fabric.Rect({
+    left: 0,
+    top: 0,
+    width: layout.width,
+    height: layout.height,
+    originX: "left",
+    originY: "top",
+    absolutePositioned: true,
+  })
+}
+
+/** Clip a user object to the print area so nothing outside it is drawn or exported */
+export async function applyPrintClip(obj: FabricObject, layout: EditorLayout): Promise<void> {
+  obj.clipPath = await printClip(layout)
+}
+
+export async function applyPrintClipAll(canvas: Canvas, layout: EditorLayout): Promise<void> {
+  for (const obj of canvas.getObjects().filter(isUserObject)) {
+    obj.clipPath = await printClip(layout)
   }
-
-  const { x, y, width, height } = area
-  const lines = [
-    new fabric.Line([x, y, x + width, y], lineProps),
-    new fabric.Line([x + width, y, x + width, y + height], lineProps),
-    new fabric.Line([x, y + height, x + width, y + height], lineProps),
-    new fabric.Line([x, y, x, y + height], lineProps),
-  ]
-
-  lines.forEach((line) => {
-    ;(line as FabricObject & { _isPrintOverlay?: boolean })._isPrintOverlay =
-      true
-    canvas.add(line)
-    canvas.sendObjectToBack(line)
-  })
-}
-
-// Apply print area clip path to a user object so parts outside are visually clipped
-export async function applyPrintClip(
-  obj: FabricObject,
-  side: DesignSide = "front"
-) {
-  const fabric = await import("fabric")
-  const area = PRINT_AREAS[side]
-
-  obj.clipPath = new fabric.Rect({
-    left: area.x,
-    top: area.y,
-    width: area.width,
-    height: area.height,
-    originX: "left",
-    originY: "top",
-    absolutePositioned: true,
-  })
-}
-
-// Apply clip path to all user objects on the canvas
-export async function applyPrintClipAll(
-  canvas: Canvas,
-  side: DesignSide = "front"
-) {
-  const fabric = await import("fabric")
-  const area = PRINT_AREAS[side]
-
-  const clip = new fabric.Rect({
-    left: area.x,
-    top: area.y,
-    width: area.width,
-    height: area.height,
-    originX: "left",
-    originY: "top",
-    absolutePositioned: true,
-  })
-
-  canvas.getObjects().forEach((obj) => {
-    if (
-      !isOverlayLine(obj) &&
-      !(obj as FabricObject & { excludeFromExport?: boolean }).excludeFromExport
-    ) {
-      obj.clipPath = clip
-    }
-  })
   canvas.renderAll()
 }
 
-// Calculate effective DPI of an image at its current display size
-export function calculateDpi(
-  originalWidth: number,
-  displayWidth: number,
-  side: DesignSide = "front"
-): number {
-  const area = PRINT_AREAS[side]
-  const physicalWidth =
-    (displayWidth / area.width) * PRINT_PHYSICAL_WIDTH_INCHES
-  if (physicalWidth <= 0) return 0
-  return Math.round(originalWidth / physicalWidth)
+export type DpiLevel = "excellent" | "good" | "low"
+
+export function dpiLevel(dpi: number): DpiLevel {
+  if (dpi >= 300) return "excellent"
+  if (dpi >= 150) return "good"
+  return "low"
 }

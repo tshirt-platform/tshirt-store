@@ -3,7 +3,9 @@
 import { useEffect, useState, useCallback } from "react"
 import type { FabricImage, FabricObject } from "fabric"
 import { useDesignStore } from "@/lib/store/design.store"
-import { calculateDpi } from "@/lib/canvas/constraints"
+import { dpiLevel } from "@/lib/canvas/constraints"
+import { effectiveDpi } from "@/lib/print/editor-layout"
+import { DESIGN_EXPORT } from "@tshirt-platform/shared"
 import { cn } from "@/lib/utils"
 
 interface DpiInfo {
@@ -12,14 +14,11 @@ interface DpiInfo {
   originalHeight: number
 }
 
-function getDpiLevel(dpi: number): {
-  label: string
-  color: string
-} {
-  if (dpi >= 300) return { label: "Excellent", color: "text-green-600 bg-green-50 border-green-200" }
-  if (dpi >= 150) return { label: "Good", color: "text-yellow-600 bg-yellow-50 border-yellow-200" }
-  return { label: "Low", color: "text-red-600 bg-red-50 border-red-200" }
-}
+const LEVEL_STYLE = {
+  excellent: { label: "Rất tốt", color: "text-green-600 bg-green-50 border-green-200" },
+  good: { label: "Tạm được", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
+  low: { label: "Thấp — có thể bị mờ", color: "text-red-600 bg-red-50 border-red-200" },
+} as const
 
 function isImage(obj: FabricObject): obj is FabricImage {
   return obj.type === "image"
@@ -27,11 +26,11 @@ function isImage(obj: FabricObject): obj is FabricImage {
 
 export default function DpiIndicator() {
   const canvas = useDesignStore((s) => s.canvas)
-  const side = useDesignStore((s) => s.side)
+  const layout = useDesignStore((s) => s.layout)
   const [dpiInfo, setDpiInfo] = useState<DpiInfo | null>(null)
 
   const updateDpi = useCallback(() => {
-    if (!canvas) {
+    if (!canvas || !layout) {
       setDpiInfo(null)
       return
     }
@@ -44,11 +43,10 @@ export default function DpiIndicator() {
 
     const originalWidth = active.width ?? 0
     const originalHeight = active.height ?? 0
-    const displayWidth = active.getScaledWidth()
-    const dpi = calculateDpi(originalWidth, displayWidth, side)
+    const dpi = effectiveDpi(active.scaleX ?? 1, layout, DESIGN_EXPORT.DPI)
 
     setDpiInfo({ dpi, originalWidth, originalHeight })
-  }, [canvas, side])
+  }, [canvas, layout])
 
   useEffect(() => {
     if (!canvas) return
@@ -70,7 +68,7 @@ export default function DpiIndicator() {
 
   if (!dpiInfo) return null
 
-  const { label, color } = getDpiLevel(dpiInfo.dpi)
+  const { label, color } = LEVEL_STYLE[dpiLevel(dpiInfo.dpi)]
 
   return (
     <div
@@ -79,7 +77,7 @@ export default function DpiIndicator() {
         color
       )}
     >
-      <span className="font-semibold">{dpiInfo.dpi} DPI</span>
+      <span className="font-semibold">{Math.round(dpiInfo.dpi)} DPI</span>
       <span className="opacity-70">
         {dpiInfo.originalWidth}x{dpiInfo.originalHeight}px
       </span>
