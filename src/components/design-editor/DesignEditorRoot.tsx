@@ -14,6 +14,7 @@ import LayerPanel from "./LayerPanel"
 import SideToggle from "./SideToggle"
 import ColorPicker from "./ColorPicker"
 import ContrastWarning from "./ContrastWarning"
+import SaveDesign from "./SaveDesign"
 
 import DpiIndicator from "./DpiIndicator"
 
@@ -45,6 +46,7 @@ export default function DesignEditorRoot({ garment }: DesignEditorRootProps) {
               <ColorPicker />
               <DpiIndicator />
             </div>
+            <SaveDesign />
           </div>
 
           {garment.configError && (

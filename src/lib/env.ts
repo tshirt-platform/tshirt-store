@@ -8,6 +8,8 @@ export const env = createEnv({
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
     S3_BUCKET_NAME: z.string().optional(),
     S3_DESIGNS_PREFIX: z.string().default("designs/"),
+    RENDER_SERVICE_URL: z.string().url().default("http://localhost:8001"),
+    RENDER_API_KEY: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_MEDUSA_URL: z.string().url().default("http://localhost:9000"),
@@ -29,5 +31,7 @@ export const env = createEnv({
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
     S3_DESIGNS_PREFIX: process.env.S3_DESIGNS_PREFIX,
+    RENDER_SERVICE_URL: process.env.RENDER_SERVICE_URL,
+    RENDER_API_KEY: process.env.RENDER_API_KEY,
   },
 })
