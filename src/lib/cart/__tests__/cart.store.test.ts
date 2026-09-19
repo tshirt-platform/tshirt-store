@@ -80,6 +80,16 @@ describe("hydrate", () => {
   })
 })
 
+describe("selectors", () => {
+  it("return the same array while the cart is empty, so React can tell nothing changed", async () => {
+    const { useCartStore, selectItems } = await fresh()
+    const a = selectItems(useCartStore.getState())
+    const b = selectItems(useCartStore.getState())
+    expect(a).toBe(b)
+    expect(a).toEqual([])
+  })
+})
+
 describe("restore", () => {
   it("loads an existing cart without ever creating one", async () => {
     storage.set("tshirt_cart_id", "cart_old")

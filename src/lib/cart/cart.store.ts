@@ -92,5 +92,7 @@ export const useCartStore = create<CartState>((set, get) => {
   }
 })
 
-export const selectItems = (s: CartState): CartLine[] => s.cart?.items ?? []
+// A fresh [] per call would make React think the store changed on every render
+const NO_ITEMS: CartLine[] = []
+export const selectItems = (s: CartState): CartLine[] => s.cart?.items ?? NO_ITEMS
 export const selectCount = (s: CartState): number => itemCount(selectItems(s))
