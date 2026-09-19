@@ -14,20 +14,28 @@ const subscribe = () => () => {}
 
 function SuccessContent() {
   const orderId = useSearchParams().get("orderId")
-  // sessionStorage only exists in the browser; the server render sees no stored order
-  const raw = useSyncExternalStore(subscribe, readRememberedOrder, () => null)
-  const order = useMemo(() => (orderId ? parseRememberedOrder(raw, orderId) : null), [raw, orderId])
+  // sessionStorage only exists in the browser; undefined marks the server render, before it is read
+  const raw = useSyncExternalStore(subscribe, readRememberedOrder, () => undefined)
+  const order = useMemo(
+    () => (orderId && raw !== undefined ? parseRememberedOrder(raw, orderId) : null),
+    [raw, orderId]
+  )
 
-  if (!orderId) {
+  if (raw === undefined) return null
+
+  // Only an order this browser just placed is confirmed here; anything else must go through the lookup
+  if (!orderId || !order) {
     return (
       <div className="py-24 text-center">
-        <p className="text-muted-foreground text-sm">Không tìm thấy đơn hàng.</p>
-        <Button asChild className="mt-4"><Link href="/products">Tiếp tục mua sắm</Link></Button>
+        <p className="text-muted-foreground text-sm">Không tìm thấy đơn hàng vừa đặt trên thiết bị này.</p>
+        <Button asChild className="mt-4">
+          <Link href={orderId ? `/orders/${encodeURIComponent(orderId)}` : "/orders"}>Tra cứu đơn hàng</Link>
+        </Button>
       </div>
     )
   }
 
-  const shown = order?.displayId ? `#${order.displayId}` : orderId
+  const shown = order.displayId ? `#${order.displayId}` : orderId
 
   async function copy() {
     try {
@@ -64,42 +72,40 @@ function SuccessContent() {
         </button>
       </div>
 
-      {order && (
-        <div className="mt-8 space-y-5 rounded-xl border p-5 text-sm">
-          <ul className="space-y-3">
-            {order.items.map((i) => (
-              <li key={i.id} className="flex justify-between gap-3">
-                <span className="min-w-0 truncate">{i.title} × {i.quantity}</span>
-                <span className="shrink-0">{formatVND(i.unitPrice * i.quantity)}</span>
-              </li>
-            ))}
-          </ul>
-          <dl className="space-y-1.5 border-t pt-4">
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Tạm tính</dt>
-              <dd>{formatVND(order.subtotal)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">Phí vận chuyển</dt>
-              <dd>{formatVND(order.shippingTotal)}</dd>
-            </div>
-            <div className="flex justify-between text-base font-semibold">
-              <dt>Tổng cộng (thu khi nhận hàng)</dt>
-              <dd>{formatVND(order.total)}</dd>
-            </div>
-          </dl>
-          {order.address && (
-            <div className="border-t pt-4">
-              <p className="font-medium">Giao đến</p>
-              <p className="text-muted-foreground mt-1">
-                {order.address.name} · {order.address.phone}
-                <br />
-                {[order.address.line, order.address.ward, order.address.province].filter(Boolean).join(", ")}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="mt-8 space-y-5 rounded-xl border p-5 text-sm">
+        <ul className="space-y-3">
+          {order.items.map((i) => (
+            <li key={i.id} className="flex justify-between gap-3">
+              <span className="min-w-0 truncate">{i.title} × {i.quantity}</span>
+              <span className="shrink-0">{formatVND(i.unitPrice * i.quantity)}</span>
+            </li>
+          ))}
+        </ul>
+        <dl className="space-y-1.5 border-t pt-4">
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">Tạm tính</dt>
+            <dd>{formatVND(order.subtotal)}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">Phí vận chuyển</dt>
+            <dd>{formatVND(order.shippingTotal)}</dd>
+          </div>
+          <div className="flex justify-between text-base font-semibold">
+            <dt>Tổng cộng (thu khi nhận hàng)</dt>
+            <dd>{formatVND(order.total)}</dd>
+          </div>
+        </dl>
+        {order.address && (
+          <div className="border-t pt-4">
+            <p className="font-medium">Giao đến</p>
+            <p className="text-muted-foreground mt-1">
+              {order.address.name} · {order.address.phone}
+              <br />
+              {[order.address.line, order.address.ward, order.address.province].filter(Boolean).join(", ")}
+            </p>
+          </div>
+        )}
+      </div>
 
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Button asChild><Link href={`/orders/${encodeURIComponent(orderId)}`}>Theo dõi đơn hàng</Link></Button>
