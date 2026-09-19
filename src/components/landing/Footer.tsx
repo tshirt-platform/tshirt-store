@@ -31,7 +31,7 @@ export function Footer() {
             >
               TShirt Studio
             </Link>
-            <p className="mt-3 text-sm leading-relaxed text-studio-charcoal/40">
+            <p className="mt-3 text-sm leading-relaxed text-studio-charcoal/70">
               Nơi mỗi chiếc áo là một tác phẩm nghệ thuật. Sáng tạo, in ấn,
               giao hàng toàn quốc.
             </p>
@@ -39,15 +39,15 @@ export function Footer() {
 
           {/* Products */}
           <div>
-            <h3 className="text-xs font-semibold tracking-wider text-studio-charcoal/40 uppercase">
+            <h2 className="text-xs font-semibold tracking-wider text-studio-charcoal/70 uppercase">
               Bộ sưu tập
-            </h3>
+            </h2>
             <ul className="mt-4 space-y-3">
               {PRODUCT_LINKS.map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sm text-studio-charcoal/60 transition-colors hover:text-studio-charcoal"
+                    className="text-sm text-studio-charcoal/70 transition-colors hover:text-studio-charcoal"
                   >
                     {link.label}
                   </Link>
@@ -58,15 +58,15 @@ export function Footer() {
 
           {/* Support */}
           <div>
-            <h3 className="text-xs font-semibold tracking-wider text-studio-charcoal/40 uppercase">
+            <h2 className="text-xs font-semibold tracking-wider text-studio-charcoal/70 uppercase">
               Hỗ trợ
-            </h3>
+            </h2>
             <ul className="mt-4 space-y-3">
               {SUPPORT_LINKS.map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sm text-studio-charcoal/60 transition-colors hover:text-studio-charcoal"
+                    className="text-sm text-studio-charcoal/70 transition-colors hover:text-studio-charcoal"
                   >
                     {link.label}
                   </Link>
@@ -77,15 +77,15 @@ export function Footer() {
 
           {/* Policies */}
           <div>
-            <h3 className="text-xs font-semibold tracking-wider text-studio-charcoal/40 uppercase">
+            <h2 className="text-xs font-semibold tracking-wider text-studio-charcoal/70 uppercase">
               Chính sách
-            </h3>
+            </h2>
             <ul className="mt-4 space-y-3">
               {POLICY_LINKS.map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sm text-studio-charcoal/60 transition-colors hover:text-studio-charcoal"
+                    className="text-sm text-studio-charcoal/70 transition-colors hover:text-studio-charcoal"
                   >
                     {link.label}
                   </Link>
@@ -95,7 +95,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 border-t border-black/5 pt-6 text-center text-xs text-studio-charcoal/30">
+        <div className="mt-14 border-t border-black/5 pt-6 text-center text-xs text-studio-charcoal/70">
           &copy; {new Date().getFullYear()} TShirt Studio. All rights reserved.
         </div>
       </div>
