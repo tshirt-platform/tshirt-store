@@ -159,6 +159,7 @@ export function VariantSelector({
           </button>
           <input
             type="number"
+            aria-label="Số lượng"
             min={1}
             max={100}
             value={quantity}
