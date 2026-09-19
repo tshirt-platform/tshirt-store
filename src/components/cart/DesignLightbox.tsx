@@ -1,23 +1,27 @@
 "use client"
 
 import { useState } from "react"
-import type { DesignAsset } from "@tshirt-platform/shared"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { previewOf, sideLabel } from "@/lib/cart/line-item"
+import { sideLabel } from "@/lib/cart/line-item"
+
+export interface LightboxImage {
+  side: "front" | "back"
+  url: string
+}
 
 interface Props {
   title: string
-  designs: DesignAsset[]
+  images: LightboxImage[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-/** Full-size preview of each printed side of a cart item */
-export function DesignLightbox({ title, designs, open, onOpenChange }: Props) {
+/** Full-size preview of each printed side of an item, in the cart or on an order */
+export function DesignLightbox({ title, images, open, onOpenChange }: Props) {
   const [index, setIndex] = useState(0)
-  const design = designs[Math.min(index, designs.length - 1)]
-  if (!design) return null
+  const image = images[Math.min(index, images.length - 1)]
+  if (!image) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -25,9 +29,9 @@ export function DesignLightbox({ title, designs, open, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        {designs.length > 1 && (
+        {images.length > 1 && (
           <div className="flex gap-1">
-            {designs.map((d, i) => (
+            {images.map((d, i) => (
               <button
                 key={d.side}
                 type="button"
@@ -44,8 +48,8 @@ export function DesignLightbox({ title, designs, open, onOpenChange }: Props) {
         )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={previewOf(design)}
-          alt={`${title} - ${sideLabel(design.side)}`}
+          src={image.url}
+          alt={`${title} - ${sideLabel(image.side)}`}
           className="max-h-[70vh] w-full rounded-lg bg-[#F5F5F0] object-contain"
         />
       </DialogContent>

@@ -16,6 +16,7 @@ import {
 const NAV_LINKS = [
   { href: "/", label: "Trang chủ" },
   { href: "/products", label: "Bộ sưu tập" },
+  { href: "/orders", label: "Tra cứu đơn" },
 ]
 
 function CartBadge({ count }: { count: number }) {

@@ -102,8 +102,8 @@ function SuccessContent() {
       )}
 
       <div className="mt-8 flex flex-wrap justify-center gap-3">
-        {/* "Theo dõi đơn hàng" arrives with FE08; a link to a page that does not exist yet would 404 */}
-        <Button asChild><Link href="/products">Thiết kế thêm áo</Link></Button>
+        <Button asChild><Link href={`/orders/${encodeURIComponent(orderId)}`}>Theo dõi đơn hàng</Link></Button>
+        <Button asChild variant="outline"><Link href="/products">Thiết kế thêm áo</Link></Button>
       </div>
     </div>
   )
