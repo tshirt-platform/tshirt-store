@@ -5,13 +5,8 @@ import { toast } from "sonner"
 import type { DesignSide } from "@tshirt-platform/shared"
 import { selectItems, useCartStore } from "@/lib/cart/cart.store"
 import { readDesign } from "@/lib/cart/line-item"
+import { fetchDesignScene } from "@/lib/design/upload"
 import { useDesignStore } from "@/lib/store/design.store"
-
-async function fetchJson(url: string): Promise<string> {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Không tải được thiết kế (${res.status})`)
-  return res.text()
-}
 
 /** When the editor is opened from the cart, loads that line item's saved design onto the canvas */
 export function useLoadSavedDesign(): void {
@@ -31,7 +26,7 @@ export function useLoadSavedDesign(): void {
         if (!design) throw new Error("Không tìm thấy thiết kế trong giỏ hàng")
 
         const entries = await Promise.all(
-          design.designs.map(async (d) => [d.side, await fetchJson(d.json_url)] as const)
+          design.designs.map(async (d) => [d.side, await fetchDesignScene(d.json_url)] as const)
         )
         await useDesignStore.getState().loadSides(Object.fromEntries(entries) as Partial<Record<DesignSide, string>>)
       } catch (e) {

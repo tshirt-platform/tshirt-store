@@ -20,7 +20,6 @@ Next.js 16 App Router storefront where customers design custom T-shirts using a 
 | zod | 4.3 | `import { z } from 'zod'` (v4 stable) |
 | @hookform/resolvers | 5.2 | Bridge RHF + Zod |
 | motion | 12.x | `from "motion/react"` (NOT `framer-motion`) |
-| @aws-sdk/client-s3 | 3.x | S3 presigned URL |
 | @t3-oss/env-nextjs | latest | Typed env vars |
 
 ## Environment Variables
@@ -36,13 +35,9 @@ process.env.NEXT_PUBLIC_MEDUSA_URL  // ❌
 Variables:
 - `NEXT_PUBLIC_MEDUSA_URL` — Medusa backend URL (default: http://localhost:9000)
 - `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` — Medusa publishable API key
-- `NEXT_PUBLIC_S3_BUCKET_URL` — S3 bucket public URL for design files
 - `NEXT_PUBLIC_STORE_URL` — This store's URL (default: http://localhost:3000)
-- `AWS_REGION` — AWS region (default: ap-southeast-1)
-- `AWS_ACCESS_KEY_ID` — AWS credentials
-- `AWS_SECRET_ACCESS_KEY` — AWS credentials
-- `S3_BUCKET_NAME` — S3 bucket name for design uploads
-- `S3_DESIGNS_PREFIX` — S3 key prefix (default: designs/)
+
+Storage credentials (`S3_*`, `AWS_*`) live in `tshirt-backend`, not here: the store uploads designs to the backend.
 
 ## Folder Structure
 
@@ -75,7 +70,6 @@ src/
 ├── lib/
 │   ├── env.ts                            # Typed env vars (Zod + @t3-oss)
 │   ├── medusa.ts                         # Medusa SDK singleton
-│   ├── s3.ts                             # S3 upload helpers
 │   ├── canvas/
 │   │   ├── fabric-config.ts              # Canvas init config
 │   │   ├── export.ts                     # exportToPng + exportToJson
@@ -133,13 +127,16 @@ interface DesignState {
 - Use Zustand for ALL design/canvas state — never `useState` for canvas data
 - History: store Fabric JSON snapshots, min 20 undo steps
 
-### S3 Presigned Upload
+### Design Upload
 ```ts
-// Flow: Client → Next.js API Route → Generate presigned URL → Client uploads directly to S3
-// 1. POST /api/upload-design → returns { presignedUrl, fileUrl }
-// 2. Client PUTs PNG/JSON to presigned URL
-// 3. Store fileUrl in cart line item metadata
+// Flow: Client → tshirt-backend → S3/R2 (the store never sees storage credentials)
+// 1. PUT {MEDUSA_URL}/store/designs/{designId}/{side}/{png|json|jpg} with the raw bytes
+//    (x-publishable-api-key header) → returns { url }
+// 2. Store each url in cart line item metadata
+// 3. Editing from the cart reads the scene back with GET .../json on the same route,
+//    so the bucket needs no CORS rules
 ```
+Helpers: `src/lib/design/upload.ts` (`uploadDesignFile`, `fetchDesignScene`).
 
 ### Error Handling
 - Wrap design editor in `<ErrorBoundary>`
@@ -157,7 +154,7 @@ interface DesignState {
 1. Validate all elements within print area
 2. Export PNG: 3000×3000px, 300 DPI
 3. Export JSON: Fabric.js canvas state (for re-editing)
-4. Upload both to S3 via presigned URLs
+4. Upload the files to the backend (see Design Upload)
 5. Store URLs in cart line item metadata:
    ```ts
    { design_png_url: string, design_json_url: string, design_side: "front" | "back" }

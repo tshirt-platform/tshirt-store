@@ -11,8 +11,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1019.0",
-    "@aws-sdk/s3-request-presigner": "^3.1019.0",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.2.2",
     "@medusajs/js-sdk": "^2.13.5",
