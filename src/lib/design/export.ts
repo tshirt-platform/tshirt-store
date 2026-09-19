@@ -18,7 +18,11 @@ function toBlob(el: HTMLCanvasElement): Promise<Blob> {
  * The print file: user content only, transparent, at 300 DPI pixel size, with the
  * resolution written into the PNG. The garment drawing and print frame are left out.
  */
-export async function exportArtworkPng(canvas: Canvas, layout: EditorLayout): Promise<Blob> {
+export async function exportArtworkPng(
+  canvas: Canvas,
+  layout: EditorLayout,
+  multiplier: number = layout.multiplier
+): Promise<Blob> {
   const savedViewport = canvas.viewportTransform
   const savedBackground = canvas.backgroundImage
 
@@ -26,11 +30,14 @@ export async function exportArtworkPng(canvas: Canvas, layout: EditorLayout): Pr
   canvas.viewportTransform = [1, 0, 0, 1, 0, 0]
   canvas.backgroundImage = undefined
   try {
-    const el = canvas.toCanvasElement(layout.multiplier, {
+    const el = canvas.toCanvasElement(multiplier, {
       ...exportRegion(layout),
       filter: isUserObject,
     })
-    const png = new Uint8Array(await (await toBlob(el)).arrayBuffer())
+    const blob = await toBlob(el)
+    // Only the print file carries the 300 DPI tag; a smaller export is for the screen
+    if (multiplier !== layout.multiplier) return blob
+    const png = new Uint8Array(await blob.arrayBuffer())
     return new Blob([setPngDpi(png, DESIGN_EXPORT.DPI)], { type: "image/png" })
   } finally {
     canvas.backgroundImage = savedBackground

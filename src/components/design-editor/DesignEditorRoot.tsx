@@ -11,7 +11,7 @@ import ToolBar from "./ToolBar"
 import TextEditor from "./TextEditor"
 import TextContextPanel from "./TextContextPanel"
 import ImageUploader from "./ImageUploader"
-import LayerPanel from "./LayerPanel"
+import EditorSidebar from "./EditorSidebar"
 import SideToggle from "./SideToggle"
 import ColorPicker from "./ColorPicker"
 import ContrastWarning from "./ContrastWarning"
@@ -67,10 +67,8 @@ export default function DesignEditorRoot({ garment }: DesignEditorRootProps) {
           </div>
         </div>
 
-        {/* Right panel — layers */}
-        <div className="hidden w-64 border-l border-black/5 bg-white md:block">
-          <LayerPanel />
-        </div>
+        {/* Right panel: live preview and layers. Below the canvas on a phone */}
+        <EditorSidebar className="h-[38vh] border-t border-black/5 md:h-auto md:w-80 md:border-l md:border-t-0" />
 
         {/* Invisible components */}
         <TextEditor />

@@ -15,7 +15,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@medusajs/js-sdk": "^2.13.5",
     "@t3-oss/env-nextjs": "^0.13.11",
-    "@tshirt-platform/shared": "^1.0.0",
+    "@tshirt-platform/shared": "^1.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "fabric": "^7.2.0",
