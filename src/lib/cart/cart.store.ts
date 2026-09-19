@@ -19,6 +19,8 @@ interface CartState {
   setQuantity: (lineId: string, quantity: number) => Promise<void>
   replaceDesign: (lineId: string, metadata: Record<string, unknown>) => Promise<void>
   remove: (lineId: string) => Promise<void>
+  /** Forgets the cart once it has become an order */
+  clear: () => void
 }
 
 const message = (e: unknown, fallback: string) => (e instanceof Error ? e.message : fallback)
@@ -89,6 +91,11 @@ export const useCartStore = create<CartState>((set, get) => {
         (cart) => ({ ...cart, items: cart.items.filter((l) => l.id !== lineId) }),
         (id) => api.removeLine(id, lineId)
       ),
+
+    clear: () => {
+      api.storeCartId(null)
+      set({ cart: null, status: "idle", busyLineId: null, error: null })
+    },
   }
 })
 
