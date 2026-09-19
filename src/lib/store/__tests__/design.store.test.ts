@@ -108,4 +108,10 @@ describe("design.store", () => {
     useDesignStore.getState().setColor({ name: "X", hex: "#000000", is_dark: true, needs_underbase: true })
     expect(useDesignStore.getState().garment).toBeNull()
   })
+
+  it("loadSides needs a canvas and a garment, and leaves state alone without them", async () => {
+    useDesignStore.getState().setGarment(resolveGarment({ productId: "p" }))
+    await useDesignStore.getState().loadSides({ front: "{}" })
+    expect(useDesignStore.getState().frontJson).toBeNull()
+  })
 })

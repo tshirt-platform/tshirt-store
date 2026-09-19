@@ -26,6 +26,8 @@ export interface GarmentContext {
   size: string | null
   variantId: string | null
   quantity: number
+  /** Cart line whose saved design is being edited, when the editor was opened from the cart */
+  editLineItemId: string | null
 }
 
 export interface GarmentInput {
@@ -38,6 +40,8 @@ export interface GarmentInput {
     size?: string | string[]
     variantId?: string | string[]
     qty?: string | string[]
+    edit?: string | string[]
+    lineItemId?: string | string[]
   }
 }
 
@@ -105,5 +109,6 @@ export function resolveGarment(input: GarmentInput): GarmentContext {
     size: first(input.search?.size),
     variantId: first(input.search?.variantId),
     quantity: parseQuantity(first(input.search?.qty)),
+    editLineItemId: first(input.search?.edit) === "true" ? first(input.search?.lineItemId) : null,
   }
 }

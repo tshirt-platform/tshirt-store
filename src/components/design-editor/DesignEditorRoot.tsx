@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { useDesignStore } from "@/lib/store/design.store"
 import { useDesignShortcuts } from "@/hooks/useDesignShortcuts"
+import { useLoadSavedDesign } from "@/hooks/useLoadSavedDesign"
 import type { GarmentContext } from "@/lib/print/garment"
 import { EditorErrorBoundary } from "./EditorErrorBoundary"
 import DesignCanvas from "./DesignCanvas"
@@ -26,6 +27,7 @@ export default function DesignEditorRoot({ garment }: DesignEditorRootProps) {
   const setGarment = useDesignStore((s) => s.setGarment)
   const ready = useDesignStore((s) => s.garment?.productId === garment.productId)
   useDesignShortcuts()
+  useLoadSavedDesign()
 
   useEffect(() => {
     setGarment(garment)
@@ -43,7 +45,7 @@ export default function DesignEditorRoot({ garment }: DesignEditorRootProps) {
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/5 bg-white px-4 py-2">
             <div className="flex flex-wrap items-center gap-3">
               <SideToggle />
-              <ColorPicker />
+              {!garment.editLineItemId && <ColorPicker />}
               <DpiIndicator />
             </div>
             <SaveDesign />
