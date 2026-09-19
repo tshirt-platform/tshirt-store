@@ -8,6 +8,9 @@ function getS3Client(): S3Client {
   if (!s3Client) {
     s3Client = new S3Client({
       region: env.AWS_REGION,
+      endpoint: env.S3_ENDPOINT,
+      // Newer SDKs sign a CRC32 checksum into uploads by default, which R2 and other S3 clones reject
+      requestChecksumCalculation: "WHEN_REQUIRED",
       credentials:
         env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
           ? {
@@ -51,6 +54,10 @@ export async function generatePresignedUrl(
     expiresIn: 3600,
   })
 
+  // An AWS-shaped URL is wrong for a custom endpoint, so R2 and the like must say where files are served from
+  if (env.S3_ENDPOINT && !env.NEXT_PUBLIC_S3_BUCKET_URL) {
+    throw new Error("NEXT_PUBLIC_S3_BUCKET_URL is required when S3_ENDPOINT is set")
+  }
   const fileUrl = env.NEXT_PUBLIC_S3_BUCKET_URL
     ? `${env.NEXT_PUBLIC_S3_BUCKET_URL}/${fileName}`
     : `https://${bucketName}.s3.${env.AWS_REGION}.amazonaws.com/${fileName}`
