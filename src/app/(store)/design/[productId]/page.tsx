@@ -5,6 +5,8 @@ import { DesignEditorLoader } from "./DesignEditorLoader"
 
 export const metadata: Metadata = {
   title: "Studio sáng tạo — TShirt Studio",
+  // The editor is an app screen, not content
+  robots: { index: false, follow: false },
 }
 
 type ProductInfo = {

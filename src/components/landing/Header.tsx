@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { motion } from "motion/react"
 import { useEffect, useState } from "react"
 import { Menu, ShoppingBag } from "lucide-react"
 import { useCartStore, selectCount } from "@/lib/cart/cart.store"
@@ -22,9 +23,16 @@ const NAV_LINKS = [
 function CartBadge({ count }: { count: number }) {
   if (count === 0) return null
   return (
-    <span className="absolute -right-2 -top-2 flex min-w-4 items-center justify-center rounded-full bg-studio-charcoal px-1 text-[10px] font-medium leading-4 text-white">
+    // Keyed by the count, so it remounts and pops each time the number changes
+    <motion.span
+      key={count}
+      initial={{ scale: 1.7 }}
+      animate={{ scale: 1 }}
+      transition={{ type: "spring", stiffness: 500, damping: 15 }}
+      className="absolute -right-2 -top-2 flex min-w-4 items-center justify-center rounded-full bg-studio-charcoal px-1 text-[10px] font-medium leading-4 text-white"
+    >
       {count > 99 ? "99+" : count}
-    </span>
+    </motion.span>
   )
 }
 

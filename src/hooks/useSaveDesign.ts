@@ -10,6 +10,7 @@ import { renderFlatPreview } from "@/lib/design/flat-preview"
 import { requestPreview } from "@/lib/design/preview"
 import { buildCartMetadata, exportSides, type SideExport, type UploadedSide } from "@/lib/design/save"
 import { newDesignId, uploadDesignFile } from "@/lib/design/upload"
+import { friendlyError } from "@/lib/errors"
 import { layoutForGarment } from "@/lib/print/garment"
 
 export type SavePhase = "idle" | "preparing" | "review" | "uploading" | "error"
@@ -67,6 +68,13 @@ export function useSaveDesign() {
         return
       }
 
+      if (sides.some((x) => x.outOfBounds > 0)) {
+        toast.warning("Có phần thiết kế nằm ngoài vùng in và sẽ bị cắt khi in")
+      }
+      if (sides.some((x) => x.lowDpiImages > 0)) {
+        toast.warning("Có ảnh độ phân giải thấp, bản in có thể bị mờ")
+      }
+
       releaseUrls()
       const built: SidePreview[] = []
       for (const side of sides) {
@@ -88,7 +96,7 @@ export function useSaveDesign() {
       setPreviews(built)
       setPhase("review")
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Không thể tạo bản xem trước")
+      setError(friendlyError(e, "Không thể tạo bản xem trước"))
       setPhase("error")
     }
   }, [releaseUrls])
@@ -130,7 +138,7 @@ export function useSaveDesign() {
       close()
       router.push("/cart")
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Không thể lưu thiết kế")
+      setError(friendlyError(e, "Không thể lưu thiết kế"))
       setPhase("error")
     }
   }, [previews, close, router])

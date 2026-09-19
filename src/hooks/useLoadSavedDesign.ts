@@ -6,6 +6,7 @@ import type { DesignSide } from "@tshirt-platform/shared"
 import { selectItems, useCartStore } from "@/lib/cart/cart.store"
 import { readDesign } from "@/lib/cart/line-item"
 import { fetchDesignScene } from "@/lib/design/upload"
+import { friendlyError } from "@/lib/errors"
 import { useDesignStore } from "@/lib/store/design.store"
 
 /** When the editor is opened from the cart, loads that line item's saved design onto the canvas */
@@ -31,7 +32,7 @@ export function useLoadSavedDesign(): void {
         await useDesignStore.getState().loadSides(Object.fromEntries(entries) as Partial<Record<DesignSide, string>>)
       } catch (e) {
         loaded.current = null
-        toast.error(e instanceof Error ? e.message : "Không mở được thiết kế đã lưu")
+        toast.error(friendlyError(e, "Không mở được thiết kế đã lưu"))
       }
     })()
   }, [canvas, lineId])

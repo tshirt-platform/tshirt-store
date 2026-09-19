@@ -17,6 +17,7 @@ import {
   type ShippingChoice,
 } from "@/lib/checkout/api"
 import type { CheckoutFormValues } from "@/lib/checkout/schema"
+import { friendlyError } from "@/lib/errors"
 
 const FORM_ID = "checkout-form"
 
@@ -68,7 +69,7 @@ export default function CheckoutPage() {
       useCartStore.getState().clear()
       router.push(`/checkout/success?orderId=${encodeURIComponent(order.id)}`)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Không đặt được hàng, vui lòng thử lại")
+      toast.error(friendlyError(e, "Không đặt được hàng, vui lòng thử lại"))
       setSubmitting(false)
     }
   }
