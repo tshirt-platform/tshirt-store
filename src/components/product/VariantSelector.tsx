@@ -2,8 +2,10 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import type { GarmentColor, SizeChartRow } from "@tshirt-platform/shared"
 import { Button } from "@/components/ui/button"
 import { SizeChart } from "@/components/product/SizeChart"
+import { ColorSwatch } from "@/components/product/ColorSwatch"
 import { formatVND } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -20,24 +22,16 @@ type VariantSelectorProps = {
   productId: string
   options: ProductOption[]
   variants: Variant[]
-}
-
-const COLOR_MAP: Record<string, string> = {
-  white: "bg-white border",
-  black: "bg-gray-900",
-  red: "bg-red-500",
-  blue: "bg-blue-500",
-  green: "bg-green-500",
-  yellow: "bg-yellow-400",
-  navy: "bg-blue-900",
-  gray: "bg-gray-400",
-  pink: "bg-pink-400",
+  colors?: GarmentColor[]
+  sizeChart?: SizeChartRow[]
 }
 
 export function VariantSelector({
   productId,
   options,
   variants,
+  colors,
+  sizeChart,
 }: VariantSelectorProps) {
   const router = useRouter()
   const [selectedColor, setSelectedColor] = useState<string | null>(null)
@@ -101,16 +95,19 @@ export function VariantSelector({
             {colorOption.values.map((v) => (
               <button
                 key={v.value}
+                type="button"
                 onClick={() => { setSelectedColor(v.value); setError(null) }}
+                aria-label={v.value}
+                aria-pressed={selectedColor === v.value}
                 className={cn(
-                  "size-9 rounded-full transition-all",
-                  COLOR_MAP[v.value.toLowerCase()] ?? "bg-gray-300",
+                  "rounded-full transition-all",
                   selectedColor === v.value
                     ? "ring-2 ring-gray-900 ring-offset-2"
                     : "hover:ring-2 hover:ring-gray-300 hover:ring-offset-1"
                 )}
-                title={v.value}
-              />
+              >
+                <ColorSwatch name={v.value} colors={colors} className="size-9" />
+              </button>
             ))}
           </div>
         </div>
@@ -121,7 +118,7 @@ export function VariantSelector({
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-medium">Size</span>
-            <SizeChart />
+            <SizeChart rows={sizeChart} />
           </div>
           <div className="flex flex-wrap gap-2">
             {sizeOption.values.map((v) => (

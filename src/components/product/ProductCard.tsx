@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { ColorSwatch } from "@/components/product/ColorSwatch"
 import { formatVND } from "@/lib/format"
-import { cn } from "@/lib/utils"
 
 type ProductCardProps = {
   id: string
@@ -10,18 +10,6 @@ type ProductCardProps = {
   price: number
   colors: string[]
   tag?: string | null
-}
-
-const COLOR_MAP: Record<string, string> = {
-  white: "bg-white border",
-  black: "bg-gray-900",
-  red: "bg-red-500",
-  blue: "bg-blue-500",
-  green: "bg-green-500",
-  yellow: "bg-yellow-400",
-  navy: "bg-blue-900",
-  gray: "bg-gray-400",
-  pink: "bg-pink-400",
 }
 
 export function ProductCard({
@@ -68,14 +56,7 @@ export function ProductCard({
         {colors.length > 0 && (
           <div className="mt-3 flex gap-1.5">
             {colors.slice(0, 5).map((color) => (
-              <span
-                key={color}
-                className={cn(
-                  "size-4 rounded-full",
-                  COLOR_MAP[color.toLowerCase()] ?? "bg-gray-300"
-                )}
-                title={color}
-              />
+              <ColorSwatch key={color} name={color} className="size-4" />
             ))}
             {colors.length > 5 && (
               <span className="text-muted-foreground text-xs leading-4">
