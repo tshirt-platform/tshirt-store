@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Menu, ShoppingBag } from "lucide-react"
+import { useCartStore, selectCount } from "@/lib/cart/cart.store"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -17,8 +18,22 @@ const NAV_LINKS = [
   { href: "/products", label: "Bộ sưu tập" },
 ]
 
+function CartBadge({ count }: { count: number }) {
+  if (count === 0) return null
+  return (
+    <span className="absolute -right-2 -top-2 flex min-w-4 items-center justify-center rounded-full bg-studio-charcoal px-1 text-[10px] font-medium leading-4 text-white">
+      {count > 99 ? "99+" : count}
+    </span>
+  )
+}
+
 export function Header() {
   const [open, setOpen] = useState(false)
+  const cartCount = useCartStore(selectCount)
+
+  useEffect(() => {
+    void useCartStore.getState().restore()
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 border-b border-black/5 bg-white/80 backdrop-blur-sm">
@@ -41,8 +56,9 @@ export function Header() {
               {link.label}
             </Link>
           ))}
-          <Link href="/cart" className="relative">
+          <Link href="/cart" className="relative" aria-label={`Giỏ hàng (${cartCount})`}>
             <ShoppingBag className="size-5 text-studio-charcoal/50 transition-colors hover:text-studio-charcoal" />
+            <CartBadge count={cartCount} />
           </Link>
           <Button
             asChild
@@ -55,8 +71,9 @@ export function Header() {
 
         {/* Mobile nav */}
         <div className="flex items-center gap-2 md:hidden">
-          <Link href="/cart" className="relative">
+          <Link href="/cart" className="relative" aria-label={`Giỏ hàng (${cartCount})`}>
             <ShoppingBag className="size-5 text-studio-charcoal/50" />
+            <CartBadge count={cartCount} />
           </Link>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
