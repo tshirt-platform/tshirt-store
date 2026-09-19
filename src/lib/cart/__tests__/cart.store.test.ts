@@ -197,3 +197,18 @@ describe("mutations", () => {
     expect(sdk.cart.updateLineItem).not.toHaveBeenCalled()
   })
 })
+
+describe("clear", () => {
+  it("forgets the cart and its stored id", async () => {
+    storage.set("tshirt_cart_id", "cart_1")
+    sdk.cart.retrieve.mockResolvedValue({ cart: cartOf("cart_1", [line("li_1")]) })
+    const { useCartStore } = await fresh()
+    await useCartStore.getState().hydrate()
+
+    useCartStore.getState().clear()
+
+    expect(useCartStore.getState().cart).toBeNull()
+    expect(useCartStore.getState().status).toBe("idle")
+    expect(storage.has("tshirt_cart_id")).toBe(false)
+  })
+})
