@@ -40,7 +40,9 @@ export default function SaveDesign() {
 
   const busy = phase === "preparing" || phase === "uploading"
   const open = phase !== "idle"
+  const editing = garment.editLineItemId !== null
   const sizeMissing = !garment.size
+  const variantMissing = !garment.variantId && !editing
   const cutOff = previews.reduce((n, p) => n + p.outOfBounds, 0)
   const lowDpi = previews.reduce((n, p) => n + p.lowDpiImages, 0)
 
@@ -48,7 +50,7 @@ export default function SaveDesign() {
     <>
       <Button size="sm" onClick={start} disabled={busy} className="h-8 px-4 text-xs">
         {phase === "preparing" ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : null}
-        Lưu thiết kế
+        {editing ? "Lưu thay đổi" : "Lưu thiết kế"}
       </Button>
 
       <Dialog open={open} onOpenChange={(o) => !o && !busy && close()}>
@@ -68,7 +70,7 @@ export default function SaveDesign() {
             </p>
           )}
 
-          {(phase === "review" || phase === "uploading" || phase === "saved") && (
+          {(phase === "review" || phase === "uploading") && (
             <div className="grid gap-3 sm:grid-cols-2">
               {previews.map((p) => (
                 <PreviewCard key={p.side} p={p} />
@@ -80,35 +82,24 @@ export default function SaveDesign() {
             <ul className="space-y-1 text-xs text-amber-800">
               {cutOff > 0 && <li>{cutOff} phần nằm ngoài vùng in sẽ bị cắt khi in.</li>}
               {lowDpi > 0 && <li>{lowDpi} ảnh dưới 150 DPI, in ra có thể bị mờ.</li>}
-              {sizeMissing && (
-                <li>Chưa chọn size. Hãy quay lại trang sản phẩm để chọn size trước khi đặt hàng.</li>
+              {(sizeMissing || variantMissing) && (
+                <li>Chưa chọn màu và size. Hãy quay lại trang sản phẩm để chọn trước khi thêm vào giỏ hàng.</li>
               )}
             </ul>
           )}
 
-          {phase === "saved" && (
-            <p className="text-sm text-green-700">
-              Đã lưu thiết kế. File in đúng khổ, 300 DPI, nền trong suốt.
-            </p>
-          )}
           {phase === "error" && <p className="text-sm text-red-600">{error}</p>}
 
           <DialogFooter>
             {phase === "error" && <Button onClick={start}>Thử lại</Button>}
-            {phase === "saved" ? (
-              <Button onClick={close}>Đóng</Button>
-            ) : (
-              <>
-                <Button variant="outline" onClick={close} disabled={busy}>
-                  Chỉnh sửa tiếp
-                </Button>
-                {(phase === "review" || phase === "uploading") && (
-                  <Button onClick={confirm} disabled={busy || sizeMissing}>
-                    {phase === "uploading" ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : null}
-                    Xác nhận thiết kế
-                  </Button>
-                )}
-              </>
+            <Button variant="outline" onClick={close} disabled={busy}>
+              Chỉnh sửa tiếp
+            </Button>
+            {(phase === "review" || phase === "uploading") && (
+              <Button onClick={confirm} disabled={busy || sizeMissing || variantMissing}>
+                {phase === "uploading" ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : null}
+                {editing ? "Cập nhật giỏ hàng" : "Thêm vào giỏ hàng"}
+              </Button>
             )}
           </DialogFooter>
         </DialogContent>

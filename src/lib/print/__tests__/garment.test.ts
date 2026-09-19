@@ -97,6 +97,17 @@ describe("resolveGarment", () => {
   })
 })
 
+describe("edit mode", () => {
+  it("is on only when edit=true comes with a line item id", () => {
+    const on = resolveGarment({ productId: "p", search: { edit: "true", lineItemId: "cali_1" } })
+    expect(on.editLineItemId).toBe("cali_1")
+    expect(resolveGarment({ productId: "p", search: { edit: "true" } }).editLineItemId).toBeNull()
+    expect(resolveGarment({ productId: "p", search: { lineItemId: "cali_1" } }).editLineItemId).toBeNull()
+    expect(resolveGarment({ productId: "p", search: { edit: "false", lineItemId: "x" } }).editLineItemId).toBeNull()
+    expect(resolveGarment({ productId: "p" }).editLineItemId).toBeNull()
+  })
+})
+
 describe("layoutForGarment", () => {
   it("builds a layout for each side from the garment's own measurements", () => {
     const g = resolveGarment({ productId: "p" })

@@ -1,8 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { DesignSide } from "@tshirt-platform/shared"
+import { useCartStore } from "@/lib/cart/cart.store"
 import { useDesignStore } from "@/lib/store/design.store"
 import { renderFlatPreview } from "@/lib/design/flat-preview"
 import { requestPreview } from "@/lib/design/preview"
@@ -10,7 +12,7 @@ import { buildCartMetadata, exportSides, type SideExport, type UploadedSide } fr
 import { newDesignId, uploadDesignFile } from "@/lib/design/upload"
 import { layoutForGarment } from "@/lib/print/garment"
 
-export type SavePhase = "idle" | "preparing" | "review" | "uploading" | "saved" | "error"
+export type SavePhase = "idle" | "preparing" | "review" | "uploading" | "error"
 
 export interface SidePreview extends SideExport {
   previewBlob: Blob
@@ -20,6 +22,7 @@ export interface SidePreview extends SideExport {
 }
 
 export function useSaveDesign() {
+  const router = useRouter()
   const [phase, setPhase] = useState<SavePhase>("idle")
   const [previews, setPreviews] = useState<SidePreview[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -108,14 +111,29 @@ export function useSaveDesign() {
         ])
         uploaded.push({ side: p.side, pngUrl, jsonUrl, previewUrl })
       }
-      setSavedDesign(buildCartMetadata(garment, uploaded))
-      setPhase("saved")
-      toast.success("Đã lưu thiết kế")
+      const metadata = buildCartMetadata(garment, uploaded)
+      setSavedDesign(metadata)
+
+      const cart = useCartStore.getState()
+      if (garment.editLineItemId) {
+        await cart.replaceDesign(garment.editLineItemId, metadata as unknown as Record<string, unknown>)
+        toast.success("Đã cập nhật thiết kế trong giỏ hàng")
+      } else {
+        if (!garment.variantId) throw new Error("Chưa chọn màu và size")
+        await cart.addDesign({
+          variantId: garment.variantId,
+          quantity: garment.quantity,
+          metadata: metadata as unknown as Record<string, unknown>,
+        })
+        toast.success("Đã thêm vào giỏ hàng")
+      }
+      close()
+      router.push("/cart")
     } catch (e) {
       setError(e instanceof Error ? e.message : "Không thể lưu thiết kế")
       setPhase("error")
     }
-  }, [previews])
+  }, [previews, close, router])
 
   return { phase, previews, error, start, confirm, close }
 }

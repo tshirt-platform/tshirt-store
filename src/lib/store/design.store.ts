@@ -32,6 +32,8 @@ interface DesignStoreState {
   setVariantId: (id: string | null) => void
   setActiveTool: (tool: ActiveTool) => void
   setSide: (side: DesignSide) => void
+  /** Puts a previously saved design on the canvas, one JSON per side */
+  loadSides: (sides: Partial<Record<DesignSide, string>>) => Promise<void>
   /** Stores the current side's objects so both sides can be exported together */
   commitSide: () => void
   saveSnapshot: () => void
@@ -91,6 +93,26 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
     removePrintAreaOverlay(canvas)
     const json = serializeCanvas(canvas)
     set(side === "front" ? { frontJson: json } : { backJson: json })
+  },
+
+  loadSides: async (sides) => {
+    const { canvas, garment } = get()
+    if (!canvas || !garment) return
+    const first: DesignSide = sides.front ? "front" : "back"
+    const json = sides[first]
+    if (!json) return
+
+    const layout = layoutForGarment(garment, first)
+    set({
+      side: first,
+      layout,
+      frontJson: sides.front ?? null,
+      backJson: sides.back ?? null,
+      history: [],
+      historyIndex: -1,
+    })
+    await restoreCanvas(canvas, json, layout, garment.color)
+    get().saveSnapshot()
   },
 
   setSide: (newSide) => {
