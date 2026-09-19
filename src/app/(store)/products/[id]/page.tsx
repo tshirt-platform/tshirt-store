@@ -80,10 +80,12 @@ export default async function ProductDetailPage(props: {
 
   const printConfig = parsePrintConfig(product.metadata?.print_config)
 
-  const images = [
-    ...(product.thumbnail ? [{ url: product.thumbnail, alt: product.title }] : []),
-    ...(product.images?.map((img) => ({ url: img.url, alt: product.title })) ?? []),
+  // The thumbnail is normally also images[0]; list each URL once
+  const gallery = [
+    ...(product.thumbnail ? [product.thumbnail] : []),
+    ...(product.images?.map((img) => img.url) ?? []),
   ]
+  const images = [...new Set(gallery)].map((url) => ({ url, alt: product.title }))
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
