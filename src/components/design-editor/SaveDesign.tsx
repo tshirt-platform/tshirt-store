@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useSaveDesign, type SidePreview } from "@/hooks/useSaveDesign"
+import { cn } from "@/lib/utils"
 import { useDesignStore } from "@/lib/store/design.store"
 
 const SIDE_LABEL = { front: "Mặt trước", back: "Mặt sau" } as const
@@ -20,7 +21,7 @@ function PreviewCard({ p }: { p: SidePreview }) {
   return (
     <figure className="overflow-hidden rounded-lg border border-black/10 bg-[#F5F5F0]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={p.previewUrl} alt={`Xem trước ${SIDE_LABEL[p.side]}`} className="h-64 w-full object-contain" />
+      <img src={p.previewUrl} alt={`Xem trước ${SIDE_LABEL[p.side]}`} className="max-h-80 w-full object-contain" />
       <figcaption className="space-y-0.5 border-t border-black/5 bg-white px-3 py-2 text-xs">
         <div className="font-medium">{SIDE_LABEL[p.side]}</div>
         <div className="text-studio-charcoal/60">
@@ -71,7 +72,7 @@ export default function SaveDesign() {
           )}
 
           {(phase === "review" || phase === "uploading") && (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className={cn("grid gap-3", previews.length > 1 && "sm:grid-cols-2")}>
               {previews.map((p) => (
                 <PreviewCard key={p.side} p={p} />
               ))}
