@@ -52,7 +52,8 @@ export async function exportSides(
   canvas: Canvas,
   garment: GarmentContext,
   stored: Record<DesignSide, string | null>,
-  current: { side: DesignSide; json: string }
+  current: { side: DesignSide; json: string },
+  multiplier?: number
 ): Promise<SideExport[]> {
   const results: SideExport[] = []
   const currentLayout = layoutForGarment(garment, current.side)
@@ -68,7 +69,7 @@ export async function exportSides(
         side,
         layout,
         json,
-        png: await exportArtworkPng(canvas, layout),
+        png: await exportArtworkPng(canvas, layout, multiplier),
         outOfBounds: validateAllObjects(canvas, layout).outOfBounds.length,
         lowDpiImages: countLowDpiImages(canvas, layout),
       })

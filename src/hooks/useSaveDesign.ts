@@ -8,14 +8,16 @@ import { useCartStore } from "@/lib/cart/cart.store"
 import { useDesignStore } from "@/lib/store/design.store"
 import { renderFlatPreview } from "@/lib/design/flat-preview"
 import { requestPreview } from "@/lib/design/preview"
-import { buildCartMetadata, exportSides, type UploadedSide } from "@/lib/design/save"
+import { collectSides, EMPTY_DESIGN_MESSAGE, warnAboutProblems } from "@/lib/design/collect"
+import { clearDraft } from "@/lib/design/draft"
+import { buildCartMetadata, type UploadedSide } from "@/lib/design/save"
 import { newDesignId, uploadDesignFile } from "@/lib/design/upload"
 import { friendlyError } from "@/lib/errors"
 import { layoutForGarment } from "@/lib/print/garment"
 
 /**
- * Exports every side at print size, uploads it and puts the design in the cart. The customer has
- * already been looking at the preview panel, so there is no confirmation step in between.
+ * Exports every side at print size, uploads it and puts the design in the cart. Runs from the preview
+ * screen, where the customer has already seen the result.
  */
 export function useSaveDesign() {
   const router = useRouter()
@@ -34,27 +36,13 @@ export function useSaveDesign() {
 
     setWorking(true)
     try {
-      state.commitSide()
-      const s = useDesignStore.getState()
-      const currentJson = s.side === "front" ? s.frontJson : s.backJson
-      if (!currentJson) throw new Error("Editor is not ready")
-
-      const sides = await exportSides(
-        canvas,
-        garment,
-        { front: s.frontJson, back: s.backJson },
-        { side: s.side, json: currentJson }
-      )
+      const sides = await collectSides()
+      if (!sides) return
       if (sides.length === 0) {
-        toast.error("Thiết kế đang trống. Hãy thêm chữ hoặc hình ảnh trước khi lưu.")
+        toast.error(EMPTY_DESIGN_MESSAGE)
         return
       }
-      if (sides.some((x) => x.outOfBounds > 0)) {
-        toast.warning("Có phần thiết kế nằm ngoài vùng in và sẽ bị cắt khi in")
-      }
-      if (sides.some((x) => x.lowDpiImages > 0)) {
-        toast.warning("Có ảnh độ phân giải thấp, bản in có thể bị mờ")
-      }
+      warnAboutProblems(sides)
 
       const designId = newDesignId()
       const uploaded: UploadedSide[] = []
@@ -91,6 +79,7 @@ export function useSaveDesign() {
         })
         toast.success("Đã thêm vào giỏ hàng")
       }
+      clearDraft(garment.productId)
       router.push("/cart")
     } catch (e) {
       toast.error(friendlyError(e, "Không thể lưu thiết kế"))
